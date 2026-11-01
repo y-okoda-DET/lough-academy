@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { BACKGROUNDS } from './data/backgrounds'
 import { TOTAL_TURNS, turnOf, weekInfo } from './data/calendar'
 import { createGame, doStage, endEvents, resolveStory, runWeek, type DayAction, type NightAction } from './engine'
+import { tie } from './bonds'
 import { buildEpilogue } from './epilogue'
 import { STORIES } from './events'
 import { TSUKKOMI_SCENES, gradeTsukkomi, gradeWord, pickScenes, playerLean, tsukkomiZones } from './showcase'
@@ -121,6 +122,24 @@ describe('バランスの目安', () => {
       passes += s.contestResults.filter((c) => c.result.includes('通過')).length
     }
     expect(passes / entries).toBeLessThan(0.6)
+  })
+})
+
+describe('10月からの発展イベント', () => {
+  it('行事が毎週あっても、仲の良い相手の3段目まで届く', () => {
+    let reached = 0
+    for (let seed = 1; seed <= 10; seed++) {
+      let s = createGame({ name: 'a', callName: 'a', role: 'boke', style: 'manzai', seed })
+      tie(s, 'tsujido', 80)
+      s = endEvents(drainEvents(s))
+      for (let i = 0; s.phase !== 'result' && i < 100; i++) {
+        const [d, n] = botWeek(s, i)
+        s = drainEvents(runWeek(s, d, n))
+        s = drainEvents(endEvents(s))
+      }
+      if ((s.counters.dev_tsujido ?? 0) >= 3) reached++
+    }
+    expect(reached).toBeGreaterThanOrEqual(5)
   })
 })
 

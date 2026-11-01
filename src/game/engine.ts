@@ -389,7 +389,9 @@ function scheduleEvents(s: GameState, rng: Rng): void {
   for (const key of careerEvents(s, month, week)) story(s, key)
 
   // 発展イベントかランダムイベント（週に1つまで）。発展イベントが起きられるなら、そちらを優先しやすい
-  const bonded = s.pending.length === 0 && rng.chance(0.7) && scheduleBondEvent(s, rng)
+  // 10月からは毎週なにかの行事があるので、発展イベントだけは行事の週にも（半分くらいの確率で）起きる
+  const free = s.pending.length === 0
+  const bonded = (free ? rng.chance(0.7) : s.turn >= turnOf(10, 1) && rng.chance(0.5)) && scheduleBondEvent(s, rng)
   if (!bonded && s.pending.length === 0 && rng.chance(0.25)) {
     const pool: [string, Record<string, string | number>?][] = []
     if (s.partner) pool.push(['shinneta'], ['loan'])
@@ -399,10 +401,12 @@ function scheduleEvents(s: GameState, rng: Rng): void {
     if (s.player.origin === 'tokyo') pool.push(['coin_shower'])
     const friend = s.seniors.find((x) => x.like >= 40)
     if (friend) pool.push(['hikkoshi', { senior: friend.id }])
-    if (s.outsideRep >= 30 && !s.flags.chokueigyou_seen && month >= 10) pool.push(['chokueigyou'], ['chokueigyou'])
+    if (s.outsideRep >= 30 && !s.flags.chokueigyou_seen && month >= 8) pool.push(['chokueigyou'], ['chokueigyou'])
     const [key, params] = rng.pick(pool)
     story(s, key, params)
   }
+  // 事務所に内緒の営業の話は、自主ライブ界隈で顔が売れてくると、行事の週にも来る
+  else if (!free && !bonded && month >= 10 && s.outsideRep >= 30 && !s.flags.chokueigyou_seen && rng.chance(0.2)) story(s, 'chokueigyou')
   if (s.partner && s.partner.bond < 12 && !s.flags.kaisan_warned) {
     s.flags.kaisan_warned = true
     story(s, 'kaisan')
