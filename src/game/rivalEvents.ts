@@ -46,7 +46,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
               '御堂（笑い）「あと、さっき通りがかりに聞こえた。ボケのあとのツッコミ、0.5秒早い。“間”は大事だよ」',
             ]),
             choices: [
-              { reply: '御堂（笑い）「声量で勝負するの、学生の1回戦までだよ」', label: '「隣の街灯でやるわ。声はこっちがデカいけどな」', hint: '度胸＋・尖り＋' },
+              { reply: '御堂（笑い）「声量で勝負するの、学生の1回戦までだよ」', label: '「隣の街灯でやるわ。声はこっちがデカいけどな」', hint: '度胸＋' },
               { reply: '御堂（驚き）「……体感だよ。体感で分かるくらいには、やってきたから」', label: '「0.5秒って、何で測ったん」', hint: '対応力＋' },
               { reply: ['御堂（驚き）「……え。素直だね」', '御堂（照れ）「……1回だけね。僕の相方、こういうの嫌がるから」'], label: '「その0.5秒、教えてくれ」と頭を下げる', hint: '表現力＋' },
             ],
@@ -64,7 +64,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
               ...(s.flags.nyugaku_ohayo ? ['真壁（ふつう）「……入学式の。おはようございます、の人」'] : []),
             ]),
             choices: [
-              { reply: '真壁（笑い）「……うるさい。……いい」', label: '「隣の街灯でやるわ。声はこっちがデカいけどな」', hint: '度胸＋・尖り＋' },
+              { reply: '真壁（笑い）「……うるさい。……いい」', label: '「隣の街灯でやるわ。声はこっちがデカいけどな」', hint: '度胸＋' },
               { reply: '真壁（考え中）「……座る前に、客が座る。頭の中で」', label: '「座り直すだけで、なんでウケるん」', hint: '発想力＋' },
               { reply: ['真壁（ふつう）「……うん」', 'ナレーション：ネタを1本やった。真壁は最後まで表情を変えなかった。', '真壁（笑い）「……2か所。笑った」'], label: '「こっちのコントも見てや」', hint: '表現力＋' },
             ],
@@ -75,7 +75,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
           s.flags.mido_rival = true
           tie(s, 'mido', 5)
           gain(s, 'guts', 2)
-          s.edge += 2
         } else if (c === 1) {
           tie(s, 'mido', 4)
           gain(s, 'adlib', 2)
@@ -86,7 +85,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       } else if (c === 0) {
         tie(s, 'makabe', 5)
         gain(s, 'guts', 2)
-        s.edge += 2
       } else if (c === 1) {
         tie(s, 'makabe', 5)
         gain(s, 'idea', 2)
@@ -300,7 +298,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
           choices: [
             { reply: '御堂（考え中）「……全部、正しかった。フリもボケも天丼も。正しいだけだった」', label: '「御堂のネタ、何があかんの」', hint: '発想力＋' },
             { reply: '御堂（考え中）「……恨むよ。恨むけど、ちゃんと観る」', label: '「どっちが選ばれても、恨みっこなしや」', hint: 'やる気＋' },
-            { reply: '御堂（笑い）「……いいね。それ、去年の僕のセリフ」', label: '「応援されへんでも、勝つわ」', hint: 'やる気＋・尖り＋' },
+            { reply: '御堂（笑い）「……いいね。それ、去年の僕のセリフ」', label: '「応援されへんでも、勝つわ」', hint: 'やる気＋' },
           ],
         }
       return {
@@ -317,7 +315,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
         choices: [
           { reply: '真壁（考え中）「……しゃべると、嘘になる。だから、しゃべらない」', label: '「真壁のコント、なんでしゃべらへんの」', hint: '発想力＋' },
           { reply: '真壁（笑い）「……ない」', label: '「枠、譲る気ある？」と聞く', hint: '度胸＋・ネタの完成度＋' },
-          { reply: '真壁（笑い）「……知ってる」', label: '「選ばれへんでも、勝つわ」', hint: 'やる気＋・尖り＋' },
+          { reply: '真壁（笑い）「……知ってる」', label: '「選ばれへんでも、勝つわ」', hint: 'やる気＋' },
         ],
       }
     },
@@ -337,7 +335,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       } else {
         tie(s, r, 4)
         s.motivation = clamp(s.motivation + 6)
-        s.edge += 2
       }
     },
   },
@@ -359,7 +356,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       choices: [
         { reply: '御堂（照れ）「……学生の決勝で1回。誰にも言ってない。今、言った」', label: '「御堂も、飛んだことあるん？」', hint: 'やる気＋' },
         { reply: '御堂（笑い）「……ウケたらね。採点は厳しいよ」', label: '「袖で見るんやったら、笑えよ」', hint: '度胸＋' },
-        { reply: '御堂（怒り）「同情じゃないよ。……リスペクトって、言わせないで」', label: '「同情はいらん」', hint: '尖り＋' },
+        { reply: '御堂（怒り）「同情じゃないよ。……リスペクトって、言わせないで」', label: '「同情はいらん」' },
       ],
     }),
     resolve: (s, c) => {
@@ -373,7 +370,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       } else {
         s.flags.mido_rival = true
         tie(s, 'mido', 5)
-        s.edge += 3
       }
     },
   },
@@ -392,7 +388,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       choices: [
         { reply: '真壁（照れ）「……全部、ある。4月から」', label: '「このメモ、もらってええの」', hint: 'やる気＋' },
         { reply: ['真壁（ふつう）「……毎回」', '真壁（笑い）「しゃべらないから、ばれない」'], label: '「真壁も、止まったことある？」', hint: '度胸＋' },
-        { reply: '真壁（怒り）「……同情、しない。メモ」', label: '「同情はいらん」', hint: '尖り＋' },
+        { reply: '真壁（怒り）「……同情、しない。メモ」', label: '「同情はいらん」' },
       ],
     }),
     resolve: (s, c) => {
@@ -405,7 +401,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
         gain(s, 'guts', 3)
       } else {
         tie(s, 'makabe', 5)
-        s.edge += 3
       }
     },
   },
@@ -430,7 +425,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
             ],
             choices: [
               { reply: ['御堂（笑い）「……それ、聞きたかった」', 'ナレーション：ドアが閉まる直前、御堂は電車に飛び乗った。窓の向こうで、親指を立てていた。'], label: '「門出、手加減せえへんで」', hint: 'やる気＋' },
-              { reply: ['御堂（照れ）「……何を」', `${me(s)}（ふつう）「お前とやるのがおもろい、って」`, '御堂（照れ）「……言えるわけないだろ。……言うけど」'], label: '「相方に、一回ちゃんと言うたら」', hint: '同期の結束＋' },
+              { reply: ['御堂（照れ）「……何を」', `${me(s)}（ふつう）「お前とやるのがおもろい、って」`, '御堂（照れ）「……言えるわけないだろ。……言うけど」'], label: '「相方に、一回ちゃんと言うたら」' },
               {
                 reply: [
                   'ナレーション：ノートを借りて、ホームのベンチの前で、高1のネタをやった。本当にひどかった。',
@@ -474,7 +469,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
                 hint: '表現力＋・体調−',
               },
               { reply: '真壁（笑い）「……袖、近い。……がんばる」', label: '「決勝で、その一言を聞かせてくれ。袖で待ってる」', hint: 'やる気＋' },
-              { reply: ['ナレーション：真壁も座った。しばらくして、真壁が小さく「……ありがと」と言った。', 'ナレーション：聞き返さなかった。聞き返したら、もう二度と言わない気がした。'], label: '何も言わずに、ベンチに座る', hint: '同期の結束＋' },
+              { reply: ['ナレーション：真壁も座った。しばらくして、真壁が小さく「……ありがと」と言った。', 'ナレーション：聞き返さなかった。聞き返したら、もう二度と言わない気がした。'], label: '何も言わずに、ベンチに座る' },
             ],
           },
     resolve: (s, c) => {
@@ -490,7 +485,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
           s.condition = clamp(s.condition - 8)
         }
       } else if (c === 1) {
-        if (r === 'mido') s.dokiBond = clamp(s.dokiBond + 6)
+        if (r === 'mido') tie(s, 'mido', 6)
         else {
           s.flags.makabe_promise = true
           s.motivation = clamp(s.motivation + 8)
@@ -499,7 +494,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
         s.flags.mido_warai = true
         s.condition = clamp(s.condition - 6)
         s.money -= 2000
-      } else s.dokiBond = clamp(s.dokiBond + 6)
+      } else tie(s, 'makabe', 6)
     },
   },
 
@@ -544,7 +539,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
         choices: [
           { reply: '御堂（笑い）「……4月にそれ言われてたら、鼻で笑ってた。今は、ちょっと怖い」', label: '「御堂、4月からも負けへんで」', hint: 'やる気＋' },
           { reply: '真壁（爆笑）「……ずるい」', label: 'メモに「真壁：しゃべらんのに一番うるさい」と書き足して返す', hint: 'ワード力＋' },
-          { reply: ['御堂（照れ）「……乾杯の音頭、学生のときから苦手なんだよ」', '真壁（笑い）「……かんぱい」', 'ナレーション：結局、いちばん声の小さい真壁が音頭を取った。座敷がいちばん笑った。'], label: '3人で乾杯する', hint: '同期の結束＋' },
+          { reply: ['御堂（照れ）「……乾杯の音頭、学生のときから苦手なんだよ」', '真壁（笑い）「……かんぱい」', 'ナレーション：結局、いちばん声の小さい真壁が音頭を取った。座敷がいちばん笑った。'], label: '3人で乾杯する' },
         ],
       }
     },
@@ -558,7 +553,6 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
       } else {
         tie(s, 'mido', 5)
         tie(s, 'makabe', 5)
-        s.dokiBond = clamp(s.dokiBond + 5)
       }
     },
   },

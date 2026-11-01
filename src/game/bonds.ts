@@ -181,11 +181,10 @@ const CHAINS: Record<string, DevEvent[]> = {
       choices: [
         {
           reply: '向井（爆笑）「よっしゃ、11人目！」', label: '行く',
-          hint: '同期の結束＋・3,000円',
+          hint: '3,000円',
           apply: (s) => {
             tie(s, 'mukai', 8)
             s.money -= 3000
-            s.dokiBond = clamp(s.dokiBond + 6)
           },
         },
         { reply: '向井（笑い）「ほな、書けたら聞かせてや。飲みながら」', label: '今日はネタを書く', hint: '発想力＋', apply: (s) => (tie(s, 'mukai', 3), gain(s, 'idea', 2)) },
@@ -298,10 +297,8 @@ const CHAINS: Record<string, DevEvent[]> = {
         { reply: '岸辺（怒り）「赤くない。照明」', label: '「耳、赤いで」', hint: '対応力＋', apply: (s) => (tie(s, 'kishibe', 6), gain(s, 'adlib', 2)) },
         {
           reply: '岸辺（考え中）「……知ってる。だから、ここに来たの」', label: '「声だけじゃ笑いは取れへんで」',
-          hint: '尖り＋',
           apply: (s) => {
             tie(s, 'kishibe', 3)
-            s.edge += 3
           },
         },
       ],
@@ -468,7 +465,7 @@ const CHAINS: Record<string, DevEvent[]> = {
       ],
       choices: [
         { reply: '大河内（照れ）「……ほな、もうちょっと書くの遅らせるわ」', label: '「その挨拶、聞く日は来ないでほしいです」', hint: 'やる気＋', apply: (s) => (tie(s, 'ookouchi', 10), (s.motivation = clamp(s.motivation + 8))) },
-        { reply: '大河内（笑い）「アホか。……まあ、1行目くらいは聞いたるわ」', label: '「一緒に考えましょか」', hint: 'ワード力＋・尖り＋', apply: (s) => (tie(s, 'ookouchi', 6), gain(s, 'word', 2), (s.edge += 2)) },
+        { reply: '大河内（笑い）「アホか。……まあ、1行目くらいは聞いたるわ」', label: '「一緒に考えましょか」', hint: 'ワード力＋', apply: (s) => (tie(s, 'ookouchi', 6), gain(s, 'word', 2)) },
       ],
     },
     {
@@ -587,7 +584,7 @@ const CHAINS: Record<string, DevEvent[]> = {
       ],
       choices: [
         { reply: '辻堂（ふつう）「礼はええ。直してこい」', label: '「ありがとうございます！」', hint: 'やる気＋', apply: (s) => (tie(s, 'tsujido', 10), (s.motivation = clamp(s.motivation + 8))) },
-        { reply: '辻堂（笑い）「……そういうとこや。おもんないけどな」', label: '「半分も正解でしたか」', hint: '尖り＋・度胸＋', apply: (s) => (tie(s, 'tsujido', 8), gain(s, 'guts', 2), (s.edge += 2)) },
+        { reply: '辻堂（笑い）「……そういうとこや。おもんないけどな」', label: '「半分も正解でしたか」', hint: '度胸＋', apply: (s) => (tie(s, 'tsujido', 8), gain(s, 'guts', 2)) },
       ],
     },
     {
@@ -641,7 +638,7 @@ const CHAINS: Record<string, DevEvent[]> = {
         '三宅（笑い）「せやから褒めんねん。褒めとったら、辞めにくいやろ。……ちょっとずるいけどな」',
       ],
       choices: [
-        { reply: '三宅（落ち込み）「……ありがとう。この仕事、毎年ちょっとずつ重なるねん」', label: '名札を外すのを手伝う', hint: '同期の結束＋', apply: (s) => (tie(s, 'miyake', 10), (s.dokiBond = clamp(s.dokiBond + 5))) },
+        { reply: '三宅（落ち込み）「……ありがとう。この仕事、毎年ちょっとずつ重なるねん」', label: '名札を外すのを手伝う', apply: (s) => (tie(s, 'miyake', 10)) },
         { reply: '三宅（爆笑）「画びょう2個！ 外すとき苦労するやつや！ ええやん！」', label: '自分の名札を、画びょうで2か所留め直す', hint: '度胸＋', apply: (s) => (tie(s, 'miyake', 8), gain(s, 'guts', 3)) },
       ],
     },
@@ -674,7 +671,7 @@ const CHAINS: Record<string, DevEvent[]> = {
         `${me}（怒り）「……」`,
       ],
       choices: [
-        { reply: '御堂（笑い）「いいね。1年後、覚えてたら言ってよ」', label: '「1年後、同じこと言えるか見とくわ」', hint: '度胸＋・尖り＋', apply: (s) => (tie(s, 'mido', 8), gain(s, 'guts', 2), (s.edge += 2)) },
+        { reply: '御堂（笑い）「いいね。1年後、覚えてたら言ってよ」', label: '「1年後、同じこと言えるか見とくわ」', hint: '度胸＋', apply: (s) => (tie(s, 'mido', 8), gain(s, 'guts', 2)) },
         { reply: '御堂（驚き）「……え、本気で？ ……今の、ちょっと面白かった」', label: '「“天丼”って何？ 食べるやつ？」', hint: '対応力＋', apply: (s) => (tie(s, 'mido', 6), gain(s, 'adlib', 2)) },
         { reply: '御堂（ふつう）「……聞こえてるでしょ。顔に出てる」', label: '聞こえないふりをする', hint: '発想力＋', apply: (s) => (tie(s, 'mido', 3), gain(s, 'idea', 2)) },
       ],

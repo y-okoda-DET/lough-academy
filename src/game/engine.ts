@@ -71,12 +71,9 @@ export function createGame(raw: NewGameInput): GameState {
     partner: null,
     comboName: '',
     seniors: INITIAL_SENIORS.map((x) => ({ ...x })),
-    dokiBond: 20,
     staffEval: 10,
     outsideRep: input.background === 'chika' ? 25 : input.background === 'circle' ? 20 : 5,
     fans: 0,
-    safePlay: 0,
-    edge: 0,
     risk: 0,
     cards: [...STARTER_CARDS, ...(bg.cards ?? [])],
     neta: { cards: { tsukami: 't_jikoshoukai', tenkai: input.style === 'conte' ? 'k_konbini' : 'k_aruaru', ochi: input.style === 'conte' ? 'o_hanten' : 'o_mouee' }, polish: 15 },
@@ -267,7 +264,6 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
       senior.like = clamp(senior.like + (has(s, 'kawaigarare') ? 11 : 7) + (has(s, 'hitorashi') ? 3 : 0))
       s.condition = clamp(s.condition - 10)
       s.money += 2500 // ごちそうになった分、食費が浮く
-      s.safePlay += 1
       count(s, 'nomi')
       log.push(flavor('nomi', rng, { senior: senior.name }))
       // 飲みを重ねると、その先輩の話が進む（最後の話で特殊能力を受け継げることがある）
@@ -284,7 +280,6 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
     }
     case 'douki':
       s.money -= 3000
-      s.dokiBond = clamp(s.dokiBond + 6)
       for (const id of classmatesOf(s)) tie(s, id, 4)
       s.motivation = clamp(s.motivation + 6)
       s.condition = clamp(s.condition - 5)

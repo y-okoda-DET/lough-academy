@@ -138,13 +138,12 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         `ナレーション：同期は${s.classmates}人になった。`,
       ],
       choices: [
-        { reply: 'ナレーション：「元気？」とだけ送った。送信ボタンを押す指が、少し重かった。', label: '鮫島にLINEを送る', hint: '同期の結束＋・やる気−' },
+        { reply: 'ナレーション：「元気？」とだけ送った。送信ボタンを押す指が、少し重かった。', label: '鮫島にLINEを送る', hint: 'やる気−' },
         { reply: 'ナレーション：同期LINEの通知は、その日も200件を超えていた。', label: '送らない', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
       if (c === 0) {
-        s.dokiBond = clamp(s.dokiBond + 5)
         s.motivation = clamp(s.motivation - 4)
         s.weekLog.push('鮫島から返事が来た。「がんばってな」。それだけだった。')
       } else gain(s, 'guts', 2)
@@ -325,14 +324,13 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         `${pn(s)}（ふつう）「それ、ほんまのことや」`,
       ],
       choices: [
-        { reply: `${pn(s)}（笑い）「うまいやん！ 将来、たこ焼き屋で食っていけるで」`, label: 'たこ焼きを焼く', hint: 'お金＋・同期の結束＋' },
+        { reply: `${pn(s)}（笑い）「うまいやん！ 将来、たこ焼き屋で食っていけるで」`, label: 'たこ焼きを焼く', hint: 'お金＋' },
         { reply: `${pn(s)}（爆笑）「今の答え、客席の講師が一番笑ってたで」`, label: '大喜利のステージに出る', hint: '対応力＋・ファン＋' },
       ],
     }),
     resolve: (s, c) => {
       if (c === 0) {
         s.money += 3000
-        s.dokiBond = clamp(s.dokiBond + 6)
         for (const id of classmatesOf(s)) tie(s, id, 3)
       } else {
         gain(s, 'adlib', 3)
@@ -539,7 +537,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ],
             choices: [
               { reply: `${pn(s)}（笑い）「……ほな、毎回飛ばさなあかんやん」`, label: '「あの流れ、ネタに入れよか」', hint: 'ネタの完成度＋・関係値＋' },
-              { reply: `${pn(s)}（落ち込み）「……うん。分かってる」`, label: '「次は飛ばすなよ」と釘を刺す', hint: '尖り＋' },
+              { reply: `${pn(s)}（落ち込み）「……うん。分かってる」`, label: '「次は飛ばすなよ」と釘を刺す' },
             ],
           }
         : {
@@ -555,7 +553,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ],
             choices: [
               { reply: `${pn(s)}（驚き）「……なんで、そっちが謝んねん」`, label: '追いかけて、先に謝る', hint: '関係値＋' },
-              { reply: 'ナレーション：送信してから、言い方を3回後悔した。', label: '「なんで飛ばすねん」とLINEを送る', hint: '関係値−・尖り＋' },
+              { reply: 'ナレーション：送信してから、言い方を3回後悔した。', label: '「なんで飛ばすねん」とLINEを送る', hint: '関係値−' },
               { reply: 'ナレーション：始発の時間。ベンチの横に、缶コーヒーが1本置いてあった。', label: 'ベンチに座ったまま朝を待つ', hint: 'やる気−' },
             ],
           },
@@ -567,7 +565,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           s.neta.polish = clamp(s.neta.polish + 6)
         } else {
           s.partner.bond = clamp(s.partner.bond - 3)
-          s.edge += 2
         }
         return
       }
@@ -576,7 +573,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         s.weekLog.push(`駅のホームで追いついた。${s.partner.name}は「……俺もごめん」とだけ言った。`)
       } else if (c === 1) {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 8 : 20))
-        s.edge += 4
         s.weekLog.push('既読はついた。返事は3日来なかった。')
       } else {
         s.partner.bond = clamp(s.partner.bond - 6)
@@ -616,7 +612,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       choices: [
         { reply: 'ナレーション：「辞める理由が、ネタにならなかったからです」。王者は少しも笑わずに言った。', label: '「なんで辞めなかったんですか」と聞く', hint: 'やる気＋' },
         { reply: 'ナレーション：書き写してみると、ボケは思ったより少なかった。', label: '王者のネタの構成を書き写す', hint: 'ワード力＋・発想力＋' },
-        { reply: 'ナレーション：「待ってます。8年は長いですよ」。教室が少しだけ笑った。', label: '「8年後、ここに凱旋しに来ます」と宣言する', hint: '度胸＋・尖り＋' },
+        { reply: 'ナレーション：「待ってます。8年は長いですよ」。教室が少しだけ笑った。', label: '「8年後、ここに凱旋しに来ます」と宣言する', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
@@ -627,7 +623,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         gain(s, 'idea', 2)
       } else {
         gain(s, 'guts', 3)
-        s.edge += 2
       }
     },
   },
@@ -647,7 +642,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       choices: [
         { reply: 'ナレーション：構成表を書いたら、自分の出番が一番短くなっていた。', label: '企画と構成に回る', hint: '発想力＋・ワード力＋' },
         { reply: 'ナレーション：出演に専念した。一番ウケたのは、台本になかった一言だった。', label: '出演に専念する', hint: '表現力＋' },
-        { reply: 'ナレーション：本番、オチは2つとも残した。2つ目の方が、少しだけウケた。', label: '意見を曲げない', hint: '尖り＋・度胸＋' },
+        { reply: 'ナレーション：本番、オチは2つとも残した。2つ目の方が、少しだけウケた。', label: '意見を曲げない', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
@@ -657,7 +652,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         gain(s, 'word', 2)
       } else if (c === 1) gain(s, 'expr', 3)
       else {
-        s.edge += 3
         gain(s, 'guts', 2)
       }
       s.weekLog.push('終演後、講師からのダメ出しは1時間続いた。')
