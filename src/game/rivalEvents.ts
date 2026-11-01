@@ -371,6 +371,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
     resolve: (s, c) => {
       if (c === 0) {
         s.flags.mido_open = true
+        s.flags.mido_tobi_told = true
         tie(s, 'mido', 8)
         s.motivation = clamp(s.motivation + 6)
       } else if (c === 1) {
@@ -523,7 +524,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
               : 'ナレーション：決勝は、客席から観た。',
           ...(rivalOf(s) === 'mido'
             ? [
-                s.flags.mido_open
+                s.flags.mido_tobi_told
                   ? '御堂（笑い）「1年でいちばん伸びたの、君らだったね。……学生の決勝で飛ばした話、誰にも言わないでよ」'
                   : kadodeMidoLine(s),
                 s.flags.mido_warai
@@ -535,7 +536,7 @@ export const RIVAL_STORIES: Record<string, StoryDef> = {
               ]
             : [
                 '真壁（ふつう）「……メモ。最後のページ」',
-                ...(s.flags.makabe_promise ? ['真壁（笑い）「……一言。言えた。袖、近かった」'] : []),
+                ...(s.flags.makabe_promise ? [r && r <= 8 ? '真壁（笑い）「……一言。言えた。袖、近かった」' : '真壁（笑い）「……一言。言えた。……袖に、いなかったけど。客席、見えた」'] : []),
                 '御堂（笑い）「真壁、今日だけで1年分しゃべってるよ」',
               ]),
           ...(rivalOf(s) === 'makabe'
