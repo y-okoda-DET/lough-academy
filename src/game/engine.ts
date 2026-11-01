@@ -270,7 +270,7 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
       seniorDrama(s, senior.id)
       if (senior.respect >= 40) {
         s.neta.polish = clamp(s.neta.polish + 5)
-        log.push(flavor('nomi_neta', rng, { senior: senior.name }))
+        log.push(flavor(senior.id === 'nakaji' ? 'nomi_neta_std' : 'nomi_neta', rng, { senior: senior.name }))
       } else if (senior.like >= 50) log.push(flavor('nomi_noneta', rng, { senior: senior.name }))
       if (has(s, 'orei')) {
         senior.like = clamp(senior.like + 3)

@@ -401,7 +401,7 @@ const CHAINS: Record<string, DevEvent[]> = {
       ],
       choices: [
         { reply: '灰原（笑い）「始発な。……寝てたら起こしたるわ」', label: '「来週、始発で並びます」', hint: '体力＋', apply: (s) => (tie(s, 'haibara', 8), gain(s, 'stamina', 2)) },
-        { reply: '灰原（ふつう）「ええ心がけや。……私の分まで飲まんでええで」', label: 'ウーロンハイを2杯目まで付き合う', hint: '体調−', apply: (s) => (tie(s, 'haibara', 5), (s.condition = clamp(s.condition - 5))) },
+        { reply: '灰原（ふつう）「ええ心がけや。……私の分まで飲まんでええで」', label: 'ウーロン茶をおかわりして、2杯目まで付き合う', hint: '体調−', apply: (s) => (tie(s, 'haibara', 5), (s.condition = clamp(s.condition - 5))) },
         { reply: '灰原（怒り）「それ聞いてどないすんねん。……チクるのは、私の仕事や」', label: '「割り込んでる人、誰ですか」', apply: (s) => tie(s, 'haibara', 1) },
       ],
     },
