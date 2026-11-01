@@ -17,11 +17,12 @@ function botWeek(s: GameState, i: number): [DayAction, NightAction] {
   return [day, night]
 }
 
-function drainEvents(s: GameState): GameState {
+// grades：本番の見せ場の出来。渡さなければ見せ場なし（加点0）
+function drainEvents(s: GameState, grades?: ('great' | 'good' | 'miss')[]): GameState {
   let guard = 0
   while (s.pending.length && guard++ < 50) {
     const ev = s.pending[0]
-    if (ev.type === 'stage') s = doStage(s)
+    if (ev.type === 'stage') s = doStage(s, grades)
     else {
       const view = STORIES[ev.key].view(s, ev.params ?? {})
       s = resolveStory(s, 0, view.input ? 'テストコンビ' : undefined)
@@ -30,17 +31,17 @@ function drainEvents(s: GameState): GameState {
   return s
 }
 
-function playThrough(background: string, seed: number): GameState {
+function playThrough(background: string, seed: number, grades?: ('great' | 'good' | 'miss')[]): GameState {
   let s = createGame({ name: '山田太郎', callName: 'ヤマダ', background, origin: 'tokyo', role: 'boke', style: 'manzai', hairColor: '#333', outfit: 'parka', seed })
-  s = drainEvents(s)
+  s = drainEvents(s, grades)
   s = endEvents(s)
   let i = 0
   while (s.phase !== 'result' && i < 100) {
     const [d, n] = botWeek(s, i++)
     s = runWeek(s, d, n)
-    s = drainEvents(s)
+    s = drainEvents(s, grades)
     s = endEvents(s)
-    s = drainEvents(s)
+    s = drainEvents(s, grades)
   }
   return s
 }
@@ -110,6 +111,17 @@ describe('バランスの目安', () => {
     // 総代は簡単には取れない
     expect(grads.filter((g) => g === 1).length).toBeLessThan(10)
   })
+
+  it('見せ場をまずまずでこなすボットでも、賞レースの1回戦を通るのは半分くらいまで', () => {
+    let entries = 0
+    let passes = 0
+    for (let seed = 1; seed <= 30; seed++) {
+      const s = playThrough(BACKGROUNDS[seed % BACKGROUNDS.length].id, seed, ['good'])
+      entries += s.contestResults.length
+      passes += s.contestResults.filter((c) => c.result.includes('通過')).length
+    }
+    expect(passes / entries).toBeLessThan(0.6)
+  })
 })
 
 describe('ネタ見せの見せ場', () => {
@@ -171,10 +183,10 @@ describe('ネタ見せの見せ場', () => {
 })
 
 describe('主人公の設定', () => {
-  it('経歴は高校卒業、東京の実家住まい、見た目は性別で決まる', () => {
+  it('経歴は高校卒業、上京して一人暮らし、見た目は性別で決まる', () => {
     const s = createGame({ name: 'a', callName: 'a', gender: 'female', role: 'tsukkomi', style: 'conte', seed: 1 })
     expect(s.player.background).toBe('fresh')
-    expect(s.player.origin).toBe('local')
+    expect(s.player.origin).toBe('tokyo')
     expect(s.player.gender).toBe('female')
     expect(s.partner).toBeNull()
     const m = createGame({ name: 'b', callName: 'b', role: 'boke', style: 'manzai', seed: 1 })

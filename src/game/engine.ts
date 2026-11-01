@@ -24,7 +24,7 @@ export interface NewGameInput {
   seed?: number
   // 経歴（careers.ts）。卒業するたびに選べる経歴が増える
   background?: string
-  // ここから下は固定（東京の実家住まい・性別ごとの見た目）。テストだけが変える
+  // ここから下は固定（大阪から上京して一人暮らし・性別ごとの見た目）。テストだけが変える
   origin?: Origin
   hairColor?: string
   outfit?: string
@@ -56,7 +56,7 @@ function withRng(s: GameState, fn: (rng: Rng) => void): void {
 export function createGame(raw: NewGameInput): GameState {
   const gender = raw.gender ?? 'male'
   const look = PLAYER_LOOK[gender]
-  const input = { ...raw, gender, background: raw.background ?? 'fresh', origin: raw.origin ?? 'local', hairColor: raw.hairColor ?? look.hairColor, outfit: raw.outfit ?? look.outfit }
+  const input = { ...raw, gender, background: raw.background ?? 'fresh', origin: raw.origin ?? 'tokyo', hairColor: raw.hairColor ?? look.hairColor, outfit: raw.outfit ?? look.outfit }
   const bg = BACKGROUND_BY_ID[input.background]
   const base: Stats = { idea: 15, word: 15, expr: 15, guts: 15, adlib: 15, stamina: 15, ...bg.stats }
   const s: GameState = {

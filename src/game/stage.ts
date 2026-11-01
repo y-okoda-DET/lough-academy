@@ -217,9 +217,12 @@ type Grade = 'great' | 'good' | 'miss'
 // 見せ場が2つある大舞台は、合計が大きくなりすぎないよう1つあたりを少し割り引く
 const GRADE_BONUS: Record<Grade, number> = { great: 24, good: 6, miss: -22 }
 const BIG_STAGE_RATE = 0.75
+// 賞レースの審査員は1日に何百組も見る。見せ場の一発より、ネタと地力で決まる（大半は1回戦で落ちる【research/03】）
+const CONTEST_RATE = 0.5
+const isContest = (kind?: StageKind) => kind === 'contest_conte' || kind === 'contest_manzai'
 
-export function showcaseBonus(showcase: Grade[]): number {
-  const rate = showcase.length >= 2 ? BIG_STAGE_RATE : 1
+export function showcaseBonus(showcase: Grade[], kind?: StageKind): number {
+  const rate = (showcase.length >= 2 ? BIG_STAGE_RATE : 1) * (isContest(kind) ? CONTEST_RATE : 1)
   return Math.round(showcase.reduce((sum, g) => sum + GRADE_BONUS[g], 0) * rate)
 }
 
@@ -276,12 +279,12 @@ function summarize(state: GameState, spec: StageSpec, t: Tally, rank: number | n
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0')
 
 // 点数がどう決まったかを、見せ場・ネタと能力・体調・本番のブレに分けて書く
-function explain(state: GameState, b: Breakdown, showcase: Grade[], accident: boolean, line: number): { label: string; text: string }[] {
+function explain(state: GameState, kind: StageKind, b: Breakdown, showcase: Grade[], accident: boolean, line: number): { label: string; text: string }[] {
   const rows: { label: string; text: string }[] = []
   if (showcase.length) {
     const n = (g: Grade) => showcase.filter((x) => x === g).length
     const parts = [n('great') && `ドッと${n('great')}`, n('good') && `まずまず${n('good')}`, n('miss') && `スベり${n('miss')}`].filter(Boolean)
-    rows.push({ label: '見せ場の出来', text: `${parts.join('・')}（${signed(showcaseBonus(showcase))}点）` })
+    rows.push({ label: '見せ場の出来', text: `${parts.join('・')}（${signed(showcaseBonus(showcase, kind))}点）` })
   }
   const base = [`ネタ${Math.round(b.cards)}`, `能力${Math.round(b.stats)}`, `仕上がり${Math.round(b.polish)}`]
   if (state.partner) base.push(`相方${Math.round(b.partner)}`)
@@ -291,7 +294,7 @@ function explain(state: GameState, b: Breakdown, showcase: Grade[], accident: bo
   rows.push({ label: '体調', text: accident ? `${cond}。本番で事故が起き、笑いが1段下がった` : cond })
   const etc = Math.round(b.luck + b.mods)
   rows.push({ label: '本番のブレ・相性', text: `${signed(etc)}点（度胸・特殊能力・客層との相性・出番の順番）` })
-  rows.push({ label: '合計', text: `${Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods) + showcaseBonus(showcase)}点（スベらない${line}・ウケる${line + 12}・爆笑${line + 26}点）` })
+  rows.push({ label: '合計', text: `${Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods) + showcaseBonus(showcase, kind)}点（スベらない${line}・ウケる${line + 12}・爆笑${line + 26}点）` })
   return rows
 }
 
@@ -312,7 +315,7 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
 
   const scored = scoreStage(state, spec, rng, lines)
   const b = scored.b
-  const score = scored.score + showcaseBonus(showcase)
+  const score = scored.score + showcaseBonus(showcase, kind)
   // 毎月ある授業と寄席は、1年のうちに客の目も肥えていく（年度末で+20）
   const ramp = kind === 'netamise' || kind === 'live' ? Math.round(state.turn / 2) : 0
   const margin = score - spec.difficulty - ramp
@@ -361,6 +364,6 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
     showcase,
     tally,
     summary: summarize(state, spec, tally, rank, field),
-    why: explain(state, b, showcase, !!accident, spec.difficulty + ramp),
+    why: explain(state, kind, b, showcase, !!accident, spec.difficulty + ramp),
   }
 }
