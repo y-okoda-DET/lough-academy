@@ -1,6 +1,6 @@
 import { affinity } from './bonds'
 import { PARTNER_CANDIDATES } from './data/people'
-import { count, story } from './core'
+import { count, kk, story } from './core'
 import type { GameState, Partner } from './types'
 
 const BOND_ID: Record<string, string> = { 向井: 'mukai', 堂島: 'dojima', 岸辺: 'kishibe', 早瀬: 'hayase' }
@@ -22,6 +22,6 @@ export function splitUp(s: GameState): void {
   s.neta.polish = 10
   s.flags.mid_reform = true
   count(s, 'kaisan')
-  s.weekLog.push(`${next.name}と新しくコンビを組んだ。「笑いのツボが同じやから」。${s.classRank === 'none' ? 'ネタは一から作り直しだ。' : '名義が変わったので梅組からやり直し。'}`)
+  s.weekLog.push(`${next.name}と新しくコンビを組んだ。${kk(next.name, '「笑いのツボが同じやから」', '「笑いのツボが同じだから」')}。${s.classRank === 'none' ? 'ネタは一から作り直しだ。' : '名義が変わったので梅組からやり直し。'}`)
   story(s, 'combo_name')
 }

@@ -394,7 +394,9 @@ function scheduleEvents(s: GameState, rng: Rng): void {
   const bonded = (free ? rng.chance(0.7) : s.turn >= turnOf(10, 1) && rng.chance(0.5)) && scheduleBondEvent(s, rng)
   if (!bonded && s.pending.length === 0 && rng.chance(0.25)) {
     const pool: [string, Record<string, string | number>?][] = []
-    if (s.partner) pool.push(['shinneta'], ['loan'])
+    // 「ネタを一行も書かない相方」の話なので、ネタを書く堂島と佐倉には起きない
+    if (s.partner && s.partner.name !== '堂島' && s.partner.name !== '佐倉') pool.push(['shinneta'])
+    if (s.partner) pool.push(['loan'])
     // 相方と仲がいいときほど、ささいな喧嘩が起きやすい
     if (s.partner && s.partner.bond >= 50) pool.push(['kenka', { v: rng.int(0, 2) }], ['kenka', { v: rng.int(0, 2) }])
     pool.push(['line_kidoku'], ['barashi'])

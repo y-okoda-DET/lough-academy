@@ -1,6 +1,6 @@
 import { affinity, classmatesOf, tie } from './bonds'
 import { PARTNER_CANDIDATES } from './data/people'
-import { clamp, count, gain, has, push, story } from './core'
+import { clamp, count, gain, has, kk, push, story } from './core'
 import type { StoryDef } from './events'
 import { KODAWARI, KODAWARI_KEYS, recall } from './kodawari'
 import { makePartner, nextPartnerBase } from './partner'
@@ -64,17 +64,17 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           ? [
               `ナレーション：${a}の番。司会が「この人と組んでみたい人！」と聞く。`,
               `ナレーション：手を挙げたのは、${me(s)}だけだった。${a}も、${me(s)}の番で手を挙げてくれていた。`,
-              `${a}（笑い）「組もうや、絶対おもろいって」`,
+              `${a}（笑い）${kk(a, '「組もうや、絶対おもろいって」', '「組みましょう。絶対、面白くなる」')}`,
               'ナレーション：その場でコンビ結成。教室の後ろで、拍手がまばらに起きた。',
             ]
           : p.o === 'yon'
             ? [
                 `ナレーション：${a}と手が挙がり合って、その場でコンビ結成。`,
                 `ナレーション：その足でファミレスへ。ネタの方向性、ボケとツッコミ、どっちが書くか。`,
-                `${a}（怒り）「いや、それはちゃうやろ」`,
+                `${a}（怒り）${kk(a, '「いや、それはちゃうやろ」', '「いや、それは違うでしょう」')}`,
                 'ナレーション：4時間後、ドリンクバーのグラスが空のまま、解散した。',
                 `ナレーション：帰り道、駅で${b}に声をかけられた。`,
-                `${b}（照れ）「さっきの、見てた。……俺と、組まへん？」`,
+                `${b}（照れ）${kk(b, '「さっきの、見てた。……俺と、組まへん？」', '「さっきの、見てた。……わたしと、組まない？」')}`,
               ]
             : [
                 `ナレーション：${a}に手を挙げた。${a}は、別の人と組んだ。`,
@@ -575,7 +575,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       }
       if (c === 0) {
         s.partner.bond = clamp(s.partner.bond + 12)
-        s.weekLog.push(`駅のホームで追いついた。${s.partner.name}は「……俺もごめん」とだけ言った。`)
+        s.weekLog.push(`駅のホームで追いついた。${s.partner.name}は${kk(s.partner.name, '「……俺もごめん」', '「……わたしも、ごめん」')}とだけ言った。`)
       } else if (c === 1) {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 8 : 20))
         s.weekLog.push('既読はついた。返事は3日来なかった。')
@@ -677,24 +677,24 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         lines: leaving
           ? [
               `ナレーション：深夜のファミレス。${p.name}が、ドリンクバーのグラスを置いた。`,
-              `${p.name}（落ち込み）「話あんねん」`,
+              `${p.name}（落ち込み）${kk(p.name, '「話あんねん」', '「話があるの」')}`,
               `${p.name}（落ち込み）${reason.line}`,
               `ナレーション：同じ週、${next}から電話があった。「もし、ひとりになるんやったら……」`,
               ...recall(s),
             ]
           : [
               `ナレーション：深夜のファミレス。${p.name}が、4月からのライブの予定表を広げた。`,
-              `${p.name}（笑い）「4月から、劇場のオーディション全部出よな」`,
+              `${p.name}（笑い）${kk(p.name, '「4月から、劇場のオーディション全部出よな」', '「4月から、劇場のオーディションは全部出ましょう」')}`,
               `${me(s)}（ふつう）「……」`,
             ],
         choices: leaving
           ? [
               { reply: 'ナレーション：ドリンクバーの氷が溶ける音だけが、しばらく続いた。', label: `${p.name}を引き止める`, hint: '関係値しだい' },
-              { reply: `${next}（笑い）「よろしく。……ネタ合わせ、明日からでええ？」`, label: `${next}と組み直す` },
+              { reply: `${next}（笑い）${kk(next, '「よろしく。……ネタ合わせ、明日からでええ？」', '「よろしく。……ネタ合わせ、明日からでいい？」')}`, label: `${next}と組み直す` },
               { reply: 'ナレーション：ひとりで帰る道は、思っていたより静かだった。', label: 'ピンでやっていく' },
             ]
           : [
-              { reply: `${p.name}（爆笑）「全部や！ 全部落ちても、全部出る！」`, label: '「全部出よう」', hint: '関係値＋' },
+              { reply: `${p.name}（爆笑）${kk(p.name, '「全部や！ 全部落ちても、全部出る！」', '「全部よ！ 全部落ちても、全部出る！」')}`, label: '「全部出よう」', hint: '関係値＋' },
               { reply: `${p.name}（驚き）「……そうか。……ちょっと、考えさせて」`, label: '「ピンでやってみたい」と切り出す' },
             ],
       }

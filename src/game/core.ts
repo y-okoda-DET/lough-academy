@@ -74,6 +74,9 @@ export function story(state: GameState, key: string, params?: Record<string, str
   state.pending.push({ type: 'story', key, params })
 }
 
+// 相方の共通セリフは関西弁で書いてある。標準語で一人称「わたし」の岸辺のときだけ、標準語の言い方に差し替える
+export const kk = (name: string | undefined, kansai: string, std: string): string => (name === '岸辺' ? std : kansai)
+
 export function yen(n: number): string {
   return `${n < 0 ? '-' : ''}${Math.abs(Math.round(n)).toLocaleString('ja-JP')}円`
 }
