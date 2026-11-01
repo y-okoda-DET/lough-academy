@@ -219,7 +219,11 @@ function applyDay(s: GameState, a: DayAction, rng: Rng): void {
         s.fans += rng.int(1, 3) * (has(s, 'chika') ? 2 : 1)
         log.push(flavor('jishulive_good', rng, { audience: String(audience) }))
       } else log.push(flavor('jishulive_bad', rng, { audience: String(audience) }))
-      if (rng.chance(0.1)) log.push(flavor('jishulive_fee', rng))
+      // 聞いていなかった追加の出費（エントリー料の差額・ノルマ・ドリンク代・打ち上げ代）
+      if (rng.chance(0.1)) {
+        s.money -= 3000
+        log.push(`${flavor('jishulive_fee', rng)}（−3,000円）`)
+      }
       break
     }
     case 'kangeki': {

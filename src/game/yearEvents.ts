@@ -768,7 +768,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           s.flags.audition_3 ? 'ナレーション：卒業公演「巣立ち」では、その他大勢として舞台の端で踊った。' : 'ナレーション：卒業公演「巣立ち」。バトルではない。思い出という感じだった。',
           ...(affinity(s, 'mido') >= 35 ? ['御堂（笑い）「卒業おめでとう。……4月からは、ただの同業者だね」'] : []),
           ...(affinity(s, 'makabe') >= 35 ? ['真壁（笑い）「……メモ帳。あなたのページ、まだ続く」'] : []),
-          ...(s.kodawari ? [`ナレーション：「${KODAWARI[s.kodawari].label}」。面談でそう言ってから、11か月がたった。`] : []),
+          ...(s.kodawari ? [`ナレーション：「${KODAWARI[s.kodawari].label}」。面談でそう言ってから、10か月がたった。`] : []),
           'ナレーション：所属説明会。4月から、大笑興業の芸人になる。',
         ],
         choices: [],
