@@ -9,7 +9,7 @@ import type { GameState } from './types'
 interface Scene {
   title: string
   place: string
-  lines: (me: string) => string[]
+  lines: (me: string, s: GameState) => string[]
   choices: { label: string; reply?: string; hint?: string; apply: (s: GameState) => void }[]
 }
 
@@ -48,8 +48,10 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '親父の店',
         place: 'ekimae',
-        lines: (me) => [
-          'ナレーション：合宿帰りのバス。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。',
+        lines: (me, s) => [
+          s.flags.gasshuku_went
+            ? 'ナレーション：合宿帰りのバス。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。'
+            : 'ナレーション：ネタ合わせの帰り道。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。',
           '向井（照れ）「親父の店。売れたら、ここでロケしてもらうねん」',
           '向井（笑い）「“息子さんの面白エピソードは？”って聞かれたら、親父、絶対スベるけどな」',
           `${me}（笑い）「親父さんの顔の方がもうおもろいやん」`,
@@ -102,10 +104,10 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '笑い7回',
         place: 'heya',
-        lines: (me) => [
-          'ナレーション：合宿から帰った夜。堂島からLINEが来た。',
-          '堂島（ふつう）「合宿のネタ、数えたら笑い7回やった」',
-          '堂島（照れ）「去年の俺、0回やってん。……7倍や」',
+        lines: (me, s) => [
+          s.flags.gasshuku_went ? 'ナレーション：合宿から帰った夜。堂島からLINEが来た。' : 'ナレーション：9月のネタ見せの夜。堂島からLINEが来た。',
+          s.flags.gasshuku_went ? '堂島（ふつう）「合宿のネタ、数えたら笑い7回やった」' : '堂島（ふつう）「今日のネタ、数えたら笑い7回やった」',
+          '堂島（照れ）「4月の俺、0回やってん。……7倍や」',
           `${me}（笑い）「0の7倍は0やぞ」`,
           '堂島（爆笑）「それ、ネタ帳に書いとく」',
         ],
@@ -272,7 +274,10 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '承諾の期限',
         place: 'famires',
-        lines: () => ['佐倉（ふつう）「内定の、最終の返事の期限、今月末やねん」', '佐倉（考え中）「4年やってきて、今がいちばん迷ってる」'],
+        lines: (_me, s) =>
+          s.flags.naitei_declined
+            ? ['佐倉（ふつう）「断った会社の人事から、また電話あってん。“4月までなら、まだ席は空けておけます”って」', '佐倉（考え中）「断ったのに。4年やってきて、今がいちばん迷ってる」']
+            : ['佐倉（ふつう）「内定の、最終の返事の期限、今月末やねん」', '佐倉（考え中）「4年やってきて、今がいちばん迷ってる」'],
         choices: [
           { reply: '佐倉（笑い）「……その計算、辻堂さんと一緒やな」', label: '「4年やったら、あと1年もいけるやろ」', hint: '関係値＋', apply: (s) => bond(s, 6) },
           { reply: 'ナレーション：戻ってくると、佐倉はメロンソーダとコーラを混ぜていた。少しだけ笑っていた。', label: '何も言わずに、ドリンクバーを取りに行く', hint: '体調＋', apply: (s) => (s.condition = clamp(s.condition + 4)) },
@@ -296,7 +301,7 @@ export const PARTNER_STORIES: Record<string, StoryDef> = {
     view: (s, p) => {
       const sc = scriptOf(s)?.scenes[Number(p.n)]
       if (!sc) return { title: '相方', lines: ['ナレーション：相方と、いつものファミレスでネタを合わせた。'], choices: [] }
-      return { title: sc.title, place: sc.place, lines: [...sc.lines(s.player.callName), ...(Number(p.n) === 2 ? recall(s) : [])], choices: sc.choices.map((c) => ({ label: c.label, hint: c.hint, reply: c.reply })) }
+      return { title: sc.title, place: sc.place, lines: [...sc.lines(s.player.callName, s), ...(Number(p.n) === 2 ? recall(s) : [])], choices: sc.choices.map((c) => ({ label: c.label, hint: c.hint, reply: c.reply })) }
     },
     resolve: (s, c, _r, p) => scriptOf(s)?.scenes[Number(p.n)]?.choices[c]?.apply(s),
   },

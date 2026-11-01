@@ -20,7 +20,8 @@ export function splitUp(s: GameState): void {
   s.partner = makePartner(next, s, 25)
   s.classRank = s.classRank === 'none' ? 'none' : 'ume'
   s.neta.polish = 10
+  s.flags.mid_reform = true
   count(s, 'kaisan')
-  s.weekLog.push(`${next.name}と新しくコンビを組んだ。「笑いのツボが同じやから」。名義が変わったので梅組からやり直し。`)
+  s.weekLog.push(`${next.name}と新しくコンビを組んだ。「笑いのツボが同じやから」。${s.classRank === 'none' ? 'ネタは一から作り直しだ。' : '名義が変わったので梅組からやり直し。'}`)
   story(s, 'combo_name')
 }

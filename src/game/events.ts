@@ -232,6 +232,7 @@ export const STORIES: Record<string, StoryDef> = {
         return
       }
       s.money -= 40000
+      s.flags.gasshuku_went = true
       for (const id of classmatesOf(s)) tie(s, id, 6)
       for (const k of ['idea', 'expr', 'adlib'] as const) gain(s, k, 3)
       s.weekLog.push(
@@ -558,13 +559,14 @@ export const STORIES: Record<string, StoryDef> = {
   naitei: {
     view: (s) => ({
       title: '相方の内定',
-      lines: [`${s.partner?.name}（落ち込み）「実は……広告会社から、内定もらってて」`, 'ナレーション：大学お笑い出身あるある。卒業とともに、みんな就職していく。'],
-      choices: [{ reply: `${s.partner?.name}（考え中）「……1年だけ、待ってもらえるか聞いてみる」`, label: '説得する', hint: '関係値しだい' }, { reply: `${s.partner?.name}（照れ）「ごめん。……テレビで見たら、会社のみんなに自慢するわ」`, label: '背中を押して、新しい相方を探す', hint: '梅組からやり直し' }],
+      lines: [`${s.partner?.name}（落ち込み）「広告会社の人事から、電話あってん。“入社の意思、年内に聞かせてほしい”って」`, `${s.partner?.name}（考え中）「研修のメール、見てたやろ。……ずっと、返事を先延ばしにしててん」`, 'ナレーション：大学お笑い出身あるある。卒業とともに、みんな就職していく。'],
+      choices: [{ reply: `${s.partner?.name}（考え中）「……1年だけ、待ってもらえるか聞いてみる」`, label: '説得する', hint: '関係値しだい' }, { reply: `${s.partner?.name}（照れ）「ごめん。……テレビで見たら、会社のみんなに自慢するわ」`, label: '背中を押して、新しい相方を探す', hint: s.classRank === 'none' ? '組み直し' : '梅組からやり直し' }],
     }),
     resolve: (s, c, rng) => {
       if (!s.partner) return
       if (c === 0 && s.partner.bond + rng.int(0, 30) >= 60) {
         s.partner.bond = clamp(s.partner.bond + 10)
+        s.flags.naitei_declined = true
         s.weekLog.push(`${s.partner.name}は内定を断った。「お前とやる方がおもろいわ」`)
       } else {
         s.weekLog.push(`${s.partner.name}は就職を選んだ。`)
@@ -576,7 +578,7 @@ export const STORIES: Record<string, StoryDef> = {
     view: (s) => ({
       title: '解散の危機',
       lines: ['ナレーション：寄席の合間。', `${s.partner?.name}（落ち込み）「……続ける自信がない」`],
-      choices: [{ reply: `${s.partner?.name}（落ち込み）「……始発、もう出てもうたな。……もうちょっと、やってみる」`, label: '朝まで話し合う', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（ふつう）「……ありがとう。おもろかったで、ほんまに」`, label: '解散する', hint: '梅組からやり直し' }],
+      choices: [{ reply: `${s.partner?.name}（落ち込み）「……始発、もう出てもうたな。……もうちょっと、やってみる」`, label: '朝まで話し合う', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（ふつう）「……ありがとう。おもろかったで、ほんまに」`, label: '解散する', hint: s.classRank === 'none' ? '組み直し' : '梅組からやり直し' }],
     }),
     resolve: (s, c) => {
       if (c === 0 && s.partner) {

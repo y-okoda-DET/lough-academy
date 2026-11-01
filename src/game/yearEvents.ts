@@ -23,6 +23,11 @@ const LEAVE_REASON: Record<string, { line: string; why: string }> = {
   早瀬: { line: '「就職、決まってん。親に、もう1年は無理って言われた」', why: '就職する' },
   佐倉: { line: '「やっぱり、内定の会社に行こうと思う」', why: '就職する' },
 }
+// 12月に内定を断った佐倉が、2月にもう一度迷うとき
+const SAKURA_DECLINED = {
+  leave: { line: '「断った会社が、4月まで席を空けてくれてるねん。……行こうと思う」', why: '就職する' },
+  stay: '佐倉は、人事からの最後の電話にも出なかった。「もう断ったって言うたやろ」と、留守電にだけ返した。',
+}
 
 // 卒業式で左隣にいる同期。いちばん仲のいい同期（相方以外）
 function leftNeighbor(s: GameState): string | undefined {
@@ -664,7 +669,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       const p = s.partner
       if (!p) return { title: '4月から', place: 'heya', lines: ['ナレーション：卒業まであと少し。ひとりで、4月からのネタを書いた。'], choices: [] }
       const leaving = p.bond < 35
-      const reason = LEAVE_REASON[p.name] ?? LEAVE_REASON['佐倉']
+      const reason = p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.leave : (LEAVE_REASON[p.name] ?? LEAVE_REASON['佐倉'])
       const next = nextPartnerBase(s).name
       return {
         title: '4月から',
@@ -702,11 +707,11 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       if (stay) {
         p.bond = clamp(p.bond + 10)
         if (leaving) s.weekLog.push(`${p.name}は、もう1年だけやると言った。「お前がそこまで言うなら」`)
-        const stayLine = PARTNER_STAY[p.name]
+        const stayLine = p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.stay : PARTNER_STAY[p.name]
         if (stayLine) s.weekLog.push(stayLine)
         return
       }
-      if (leaving && c === 0) s.weekLog.push(`${p.name}の気持ちは変わらなかった。「${LEAVE_REASON[p.name]?.why ?? '辞める'}」と決めていた。`)
+      if (leaving && c === 0) s.weekLog.push(`${p.name}の気持ちは変わらなかった。「${(p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.leave : LEAVE_REASON[p.name])?.why ?? '辞める'}」と決めていた。`)
       const pin = leaving ? c === 2 || (c === 0 && rng.chance(0.5)) : true
       if (pin) {
         s.flags.pin = true
@@ -756,7 +761,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           '灰原（笑い）「ほら。両隣、見てみ」',
           ...gradLines(s),
           p
-            ? `ナレーション：右隣には${p.name}が座っていた。${s.flags.reform ? '組み直して、まだひと月。' : (gradPartnerLine(s) ?? '4月の相方見つけ会から、ずっと隣にいた。')}`
+            ? `ナレーション：右隣には${p.name}が座っていた。${s.flags.reform ? '組み直して、まだひと月。' : s.flags.mid_reform ? '途中から組んで、ここまで一緒に来た。' : (gradPartnerLine(s) ?? '4月の相方見つけ会から、ずっと隣にいた。')}`
             : 'ナレーション：右隣の席は、空いていた。ピンで残ることを選んだ。',
           ...(p ? [scriptOf(s)?.grad ?? `${p.name}（笑い）「なんや、じろじろ見て」`] : []),
           left ? `ナレーション：左隣には${left}。最後まで、ここに残った。` : 'ナレーション：左隣も、空いていた。',

@@ -378,7 +378,7 @@ function scheduleEvents(s: GameState, rng: Rng): void {
   if (month === 8 && week === 3 && s.player.style === 'manzai') story(s, 'contest_entry', { kind: 'contest_manzai' })
   if (month === 9 && week === 1) s.weekLog.push(`もうすぐ9月2週の強化合宿。参加費4万円は、出発の朝に現金で払う。財布の中は${yen(s.money)}。`)
   if (month === 9 && week === 2) story(s, 'gasshuku')
-  if (month === 12 && week === 1 && s.player.background === 'circle' && !s.flags.naitei_done) {
+  if (month === 12 && week === 1 && s.player.background === 'circle' && s.partner?.name === '佐倉' && !s.flags.naitei_done) {
     s.flags.naitei_done = true
     story(s, 'naitei')
   }
