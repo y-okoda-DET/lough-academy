@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { weekLabel } from '../game/data/calendar'
 import { storyView } from '../game/events'
-import { conditionWarning, STAGES } from '../game/stage'
+import { conditionWarning, stageSpec } from '../game/stage'
 import type { GameState, StageKind, StageResult } from '../game/types'
 import { AdvScreen } from './Adv'
 import { pushLog } from './log'
@@ -55,7 +55,7 @@ export function StoryScreen({ state, eventKey, params, onChoose }: { state: Game
 }
 
 export function StageIntro({ state, kind, onPerform, onNeta }: { state: GameState; kind: StageKind; onPerform: () => void; onNeta: (s: GameState) => void }) {
-  const spec = STAGES[kind]
+  const spec = stageSpec(state, kind)
   const [edit, setEdit] = useState(false)
   return (
     <div className="screen event">

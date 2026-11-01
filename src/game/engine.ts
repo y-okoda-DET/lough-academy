@@ -539,7 +539,9 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
     case 'live':
       s.fans += r.level * 3 + (r.level === 3 ? 5 : 0)
       s.staffEval = clamp(s.staffEval + r.level * 2)
-      if (r.level >= 2) r.lines.push(`作家票・社員票で上位${r.level === 3 ? '1' : '3'}組に入った。`)
+      // 順位は結果画面の「20組中◯位」と同じものを使う
+      if (r.rank === 1) r.lines.push('作家票・社員票で1位になった。')
+      else if (r.rank && r.rank <= 3) r.lines.push(`作家票・社員票で上位3組に入った（${r.rank}位）。`)
       break
     case 'contest_conte':
     case 'contest_manzai': {

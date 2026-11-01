@@ -91,6 +91,15 @@ export const STAGES: Record<StageKind, StageSpec> = {
   },
 }
 
+// 東西寄席合戦は12月がアウェイ（大阪）、1月がホーム（東京）。2回目の舞台はホーム用の会場と前口上にする
+export function stageSpec(state: GameState, kind: StageKind): StageSpec {
+  const spec = STAGES[kind]
+  if (kind !== 'tozai') return spec
+  const away = state.stageHistory.find((r) => r.kind === 'tozai')
+  if (!away) return spec
+  return { ...spec, title: '東西寄席合戦（ホーム戦）', venue: '東京の劇場（ホーム）', intro: ['東西の養成所の対抗戦。今度は、こっちの劇場に大阪の組がやってくる。', 'ホームの客席には、同期の顔が見える。'] }
+}
+
 const STYLE_STATS: Record<'manzai' | 'conte', StatKey[]> = {
   manzai: ['word', 'idea', 'adlib'],
   conte: ['expr', 'idea', 'adlib'],
@@ -299,7 +308,7 @@ function explain(state: GameState, kind: StageKind, b: Breakdown, showcase: Grad
 }
 
 export function performStage(state: GameState, kind: StageKind, rng: Rng, showcase: Grade[] = []): StageResult {
-  const spec = STAGES[kind]
+  const spec = stageSpec(state, kind)
   const lines: string[] = []
 
   if (kind === 'netamise' && state.queueChoice === 'last' && rng.chance(0.35)) {
@@ -364,6 +373,7 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
     showcase,
     tally,
     summary: summarize(state, spec, tally, rank, field),
+    ...(rank ? { rank } : {}),
     why: explain(state, kind, b, showcase, !!accident, spec.difficulty + ramp),
   }
 }
