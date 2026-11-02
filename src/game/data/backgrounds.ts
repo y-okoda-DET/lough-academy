@@ -62,7 +62,7 @@ export const BACKGROUNDS: Background[] = [
   {
     id: 'fresh',
     name: '高校卒業',
-    blurb: '18歳。東京生まれ東京育ちで、実家から通う。高校を出てそのまま入学した。何も知らないけど、伸びしろだけはある。',
+    blurb: '18歳。大阪の高校を出て、そのまま上京して入学した。駅から5分の風呂なしアパートで一人暮らし。何も知らないけど、伸びしろだけはある。',
     stats: { idea: 14, word: 12, expr: 14, guts: 18, adlib: 14, stamina: 30 },
     money: 40000,
     skills: [],

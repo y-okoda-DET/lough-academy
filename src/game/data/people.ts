@@ -29,7 +29,7 @@ export const PARTNER_CANDIDATES: Omit<Partner, 'bond' | 'role'>[] = [
   },
   {
     name: '早瀬',
-    blurb: '口が回る。同じ風呂なしアパートの隣の部屋に住んでいる。',
+    blurb: '口が回る。終電で、いつも同じ駅で降りている。',
     stats: { idea: 14, word: 24, expr: 16, guts: 16, adlib: 18, stamina: 18 },
     skills: ['hayakuchi'],
   },

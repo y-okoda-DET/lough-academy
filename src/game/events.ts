@@ -1,4 +1,4 @@
-import { DEV_STORIES, affinity, classmatesOf, tie } from './bonds'
+import { DEV_STORIES, GIFT_LIKE, GIFT_RESPECT, affinity, classmatesOf, tie } from './bonds'
 import { kodawariOf } from './kodawari'
 import { PARTNER_STORIES } from './partnerLines'
 import { YEAR_STORIES } from './yearEvents'
@@ -7,7 +7,7 @@ import { SENPAI_STORIES } from './senpaiEvents'
 import { CAREER_STORIES, nyugakuLines, ohayoReply } from './careers'
 import { CARDS } from './data/cards'
 import { PARTNER_CANDIDATES } from './data/people'
-import { clamp, count, gain, has, push, story, yen } from './core'
+import { clamp, count, gain, has, kk, push, story, yen } from './core'
 import { makePartner, splitUp } from './partner'
 import type { Rng } from './rng'
 import type { GameState } from './types'
@@ -37,6 +37,13 @@ export interface StoryDef {
 
 function seniorName(s: GameState, id: string | number | undefined): string {
   return s.seniors.find((x) => x.id === id)?.name ?? '先輩'
+}
+
+// お金が尽きたときに頼れる先輩。居候させてくれるのは、仲が良くて、芸も認めてくれている先輩だけ
+function debtHelpers(s: GameState) {
+  const savior = s.seniors.find((x) => x.like >= GIFT_LIKE - 5 && x.respect >= GIFT_RESPECT)
+  const friend = savior ? undefined : s.seniors.find((x) => x.like >= 50)
+  return { savior, friend }
 }
 
 export const STORIES: Record<string, StoryDef> = {
@@ -71,15 +78,12 @@ export const STORIES: Record<string, StoryDef> = {
         '辻堂（笑い）「4年もやってたら、もう芸歴9年やな」',
         'ナレーション：計算が合わない。でも教室の何人かが笑った。期待されているのか、試されているのか。',
       ],
-      choices: [{ reply: '辻堂（ふつう）「謙遜は舞台でスベってからでええ」', label: '「そんなことないです」と笑う', hint: '先輩の印象＋' }, { reply: '辻堂（笑い）「ほな見とくわ。芸歴9年分な」', label: '「見ててください」と言い切る', hint: 'やる気＋・尖り＋' }],
+      choices: [{ reply: '辻堂（ふつう）「謙遜は舞台でスベってからでええ」', label: '「そんなことないです」と笑う', hint: '辻堂の印象＋' }, { reply: '辻堂（笑い）「ほな見とくわ。芸歴9年分な」', label: '「見ててください」と言い切る', hint: 'やる気＋' }],
     }),
     resolve: (s, c) => {
       s.teacherEval += 5
-      if (c === 0) s.safePlay += 1
-      else {
-        s.motivation = clamp(s.motivation + 8)
-        s.edge += 5
-      }
+      if (c === 0) tie(s, 'tsujido', 6)
+      else s.motivation = clamp(s.motivation + 8)
     },
   },
   aikata_kai: {
@@ -133,12 +137,12 @@ export const STORIES: Record<string, StoryDef> = {
       lines: s.flags.queue_seen
         ? ['ナレーション：今月もネタ見せの日。列はもう廊下に伸びている。']
         : [
-            'ナレーション：ネタ見せは並んだ順。授業時間内に見てもらえるのは15組前後。',
-            '灰原（ふつう）「後ろの方ほど、辻堂さんの機嫌が悪なるで。15組目くらいから“おもんない”の“お”しか言わへん」',
+            'ナレーション：ネタ見せは並んだ順。授業時間内に見てもらえるのは12組前後。',
+            '灰原（ふつう）「後ろの方ほど、辻堂さんの機嫌が悪なるで。8組目くらいから“おもんない”の“お”しか言わへん」',
           ],
       choices: [
         { reply: '灰原（驚き）「早っ。私より先に来てるやん。鍵、まだ開いてへんで」', label: '2時間前から最前列に並ぶ', hint: '体調−・講師の機嫌＋' },
-        { reply: '灰原（ふつう）「1時間前は、だいたい20番目くらいやな」', label: '1時間前に並ぶ', hint: '体調−' },
+        { reply: '灰原（ふつう）「1時間前は、だいたい6番目くらいやな」', label: '1時間前に並ぶ', hint: '体調−' },
         { reply: '灰原（ふつう）「ギリギリの人は、辻堂さんの“お”を聞くことになるで」', label: 'ギリギリに行く' },
         { reply: '灰原（考え中）「わざと後ろ？ ……辻堂さんが疲れて笑うの狙いか。たまに効くねん、それ」', label: 'わざと列の後ろに並ぶ', hint: '見てもらえないかも' },
       ],
@@ -160,16 +164,16 @@ export const STORIES: Record<string, StoryDef> = {
       const v = Number(p.v ?? 0)
       // 2回目からは朝の様子と、先輩の返事を毎回変える
       const morning = [
-        '朝7時、頭が割れるように痛い。',
+        '朝7時、寝不足で頭が重い。',
         '目が覚めたら、服のまま床で寝ていた。スマホの充電は3%。',
         '始発で帰ったはずが、終点で目が覚めた。知らない駅のホームで、スマホを開く。',
         '朝8時。上着のポケットから、昨日の店のおしぼりが出てきた。',
-        '目覚ましより先に、のどの渇きで起きた。昨日の最後の1時間の記憶がない。',
+        '目覚ましより先に、のどの渇きで起きた。昨日は終電を逃して、始発で帰ってきた。',
       ][v % 5]
       const reply: Record<string, string[]> = {
         haibara: ['灰原（笑い）「早いな。こっちはまだ寝てたわ」', '灰原（笑い）「律儀やなあ。昨日のあの話、誰にも言うたらあかんで」', '灰原（ふつう）「おはよう。水飲んどきや。今日ネタ見せやろ」', '灰原（笑い）「スタンプだけでええのに。……まあ、うれしいけど」'],
         ookouchi: ['大河内（ふつう）「おう」', '大河内（ふつう）「朝のお礼は、昼までに来たら合格や。お前は早い」', '大河内（笑い）「昨日のネタの話、覚えとるか。覚えてへんならもう一回聞きに来い」', '大河内（ふつう）「礼はええ。次はお前が、後輩に奢れ」'],
-        nakaji: ['ナカジ（笑い）「早っ。まだ店の片付けしとるわ」', 'ナカジ（ふつう）「おつかれ。今週のシフト、代わってくれたらチャラでいい」', 'ナカジ（笑い）「お礼のLINEで一番長いの、お前だよ。読むの大変」', 'ナカジ（ふつう）「次の自主ライブ、受付やってくれたら、それがお礼な」'],
+        nakaji: ['ナカジ（笑い）「早っ。まだ店の片付けしてるよ」', 'ナカジ（ふつう）「おつかれ。今週のシフト、代わってくれたらチャラでいい」', 'ナカジ（笑い）「お礼のLINEで一番長いの、お前だよ。読むの大変」', 'ナカジ（ふつう）「次の自主ライブ、受付やってくれたら、それがお礼な」'],
       }
       const r = reply[String(p.senior)] ?? [`${name}（笑い）「早いな。こっちはまだ寝てたわ」`]
       const late = [`ナレーション：昼過ぎにスマホを見ると、${name}さんから「生きてる？」とだけ来ていた。`, `ナレーション：昼過ぎに慌てて送った。既読はついたが、返事はなかった。`, `ナレーション：夕方になって、${name}さんから「昨日、楽しかったな」と先に来ていた。先を越された。`][v % 3]
@@ -183,7 +187,7 @@ export const STORIES: Record<string, StoryDef> = {
               'ナレーション：お礼は3回が鉄則。別れ際に直接、翌朝にメッセージ、次に会ったときは開口一番「この前はご馳走様でした」。',
               `ナレーション：${morning}`,
             ],
-        choices: [{ reply: r[v % r.length], label: ['翌朝一番にお礼を送る', '昨日の話を一つ入れて、お礼を送る', '短く、でもすぐにお礼を送る', '起きてすぐ、お礼を送る'][v % 4] }, { reply: late, label: ['二日酔いで昼まで寝てしまう', 'あとで送ろうと思って、二度寝する', '文面を考えすぎて、送れないまま昼になる'][v % 3] }],
+        choices: [{ reply: r[v % r.length], label: ['翌朝一番にお礼を送る', '昨日の話を一つ入れて、お礼を送る', '短く、でもすぐにお礼を送る', '起きてすぐ、お礼を送る'][v % 4] }, { reply: late, label: ['寝不足で昼まで寝てしまう', 'あとで送ろうと思って、二度寝する', '文面を考えすぎて、送れないまま昼になる'][v % 3] }],
       }
     },
     resolve: (s, c, _r, p) => {
@@ -195,7 +199,7 @@ export const STORIES: Record<string, StoryDef> = {
         count(s, 'orei')
       } else {
         senior.like = clamp(senior.like - 6)
-        s.weekLog.push(`${senior.name}さんへのお礼が昼過ぎになった。返事は「おう」だけだった。`)
+        s.weekLog.push(`${senior.name}さんへのお礼が昼過ぎになった。返事は${senior.id === 'ookouchi' ? '「おう」' : senior.id === 'nakaji' ? '「りょ」' : '「了解」'}だけだった。`)
       }
     },
   },
@@ -235,7 +239,7 @@ export const STORIES: Record<string, StoryDef> = {
         return
       }
       s.money -= 40000
-      s.dokiBond = clamp(s.dokiBond + 10)
+      s.flags.gasshuku_went = true
       for (const id of classmatesOf(s)) tie(s, id, 6)
       for (const k of ['idea', 'expr', 'adlib'] as const) gain(s, k, 3)
       s.weekLog.push(
@@ -260,13 +264,13 @@ export const STORIES: Record<string, StoryDef> = {
           '辻堂（怒り）「合宿に何しに来たんや。いつものネタを、いつもどおりやっただけやろ。2泊3日、何を持って帰るつもりや」',
           '辻堂（ふつう）「明日の最終発表で同じもん持ってきたら、帰りのバスは一番前や。俺の隣でな」',
           'ナレーション：大広間が静かになった。同期の視線が、背中に刺さる。',
-          p ? `${p}（落ち込み）「……部屋、戻ろか」` : 'ナレーション：ひとりで、部屋に戻った。',
+          p ? `${p}（落ち込み）${kk(p, '「……部屋、戻ろか」', '「……部屋、戻りましょう」')}` : 'ナレーション：ひとりで、部屋に戻った。',
           'ナレーション：消灯まであと2時間。最終発表は、明日の朝10時。',
         ],
         choices: [
-          { reply: p ? `${p}（考え中）「頭からか。……ええよ。寝るのは帰りのバスでええ」` : `${me(s)}（考え中）「頭から書く。寝るのは帰りのバスでいい」`, label: '一晩で、頭から書き直す', hint: '発想力＋・体調−' },
-          { reply: p ? `${p}（笑い）「ほな廊下でやろ。自販機の前、明るいし」` : `${me(s)}（考え中）「廊下の自販機の前なら、明るい」`, label: '朝まで、今のネタを合わせ込む', hint: 'ネタの完成度＋・体調−' },
-          { reply: p ? `${p}（ふつう）「止められたとこだけ、か。……それで足りるかな」` : `${me(s)}（ふつう）「止められたところだけ。それで足りるか」`, label: '止められたところだけ直して、寝る', hint: '体調はそのまま' },
+          { reply: p ? `${p}（考え中）${kk(p, '「頭からか。……ええよ。寝るのは帰りのバスでええ」', '「頭から、ね。……いいわ。寝るのは帰りのバスで」')}` : `${me(s)}（考え中）「頭から書く。寝るのは帰りのバスでええ」`, label: '一晩で、頭から書き直す', hint: '発想力＋・体調−' },
+          { reply: p ? `${p}（笑い）${kk(p, '「ほな廊下でやろ。自販機の前、明るいし」', '「じゃあ廊下でやりましょう。自販機の前、明るいから」')}` : `${me(s)}（考え中）「廊下の自販機の前なら、明るい」`, label: '朝まで、今のネタを合わせ込む', hint: 'ネタの完成度＋・体調−' },
+          { reply: p ? `${p}（ふつう）${kk(p, '「止められたとこだけ、か。……それで足りるかな」', '「止められたところだけ、ね。……それで足りるかしら」')}` : `${me(s)}（ふつう）「止められたとこだけ。それで足りるやろか」`, label: '止められたところだけ直して、寝る', hint: '体調はそのまま' },
         ],
       }
     },
@@ -289,7 +293,7 @@ export const STORIES: Record<string, StoryDef> = {
     view: (s) => ({
       title: 'クラス替え',
       lines: [
-        'ナレーション：夏が終わり、ネタ見せが実力別のクラスになった。松組10組、竹組15組、梅組はそれ以外の100組以上。',
+        `ナレーション：夏が終わり、ネタ見せが実力別のクラスになった。松組10組、竹組15組、梅組はそれ以外の${Math.max(10, Math.round(s.classmates / 2) - 25)}組。`,
         `ナレーション：${s.comboName}は「${{ none: '-', ume: '梅組', take: '竹組', matsu: '松組' }[s.classRank]}」。`,
         s.classRank === 'ume' ? '三宅（笑い）「梅組へようこそ！ 梅はな、いちばん寒い時期に咲くんやで」' : '辻堂（ふつう）「名前、覚えたぞ。覚えたからには、忘れさせんなよ」',
         'ナレーション：昇格・降格は毎月。コンビを解散すると、自動的に梅組に落ちる。',
@@ -364,7 +368,7 @@ export const STORIES: Record<string, StoryDef> = {
         `${s.partner?.name}（ふつう）「……ちょっと辛すぎますね」`,
         `${s.partner?.name}（笑い）「じゃ、帰りますか！」`,
       ],
-      choices: [{ reply: `${s.partner?.name}（笑い）「カレー、次は甘口でお願いします」`, label: '笑って許す', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（驚き）「……そんな怒る？ ……ごめん。次から30分前に来る」`, label: '本気で怒る', hint: '関係値−・尖り＋' }],
+      choices: [{ reply: `${s.partner?.name}（笑い）「カレー、次は甘口でお願いします」`, label: '笑って許す', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（驚き）「……そんな怒る？ ……ごめん。次から30分前に来る」`, label: '本気で怒る', hint: '関係値−' }],
     }),
     resolve: (s, c) => {
       if (!s.partner) return
@@ -373,7 +377,6 @@ export const STORIES: Record<string, StoryDef> = {
         s.motivation = clamp(s.motivation - 5)
       } else {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 2 : 6))
-        s.edge += 2
       }
     },
   },
@@ -385,7 +388,7 @@ export const STORIES: Record<string, StoryDef> = {
         `${s.partner?.name}（笑い）「新ネタやろう！」`,
         `ナレーション：言い出したのは、ネタを一行も書かない${s.partner?.name}だった。`,
       ],
-      choices: [{ reply: `${s.partner?.name}（爆笑）「よっしゃ！ ほな、書くのは任せた！」`, label: '新ネタにする', hint: '完成度リセット・カード＋' }, { reply: `${s.partner?.name}（落ち込み）「……いつものな。いつもの、ええよな」`, label: '「いつものでいこう」', hint: '関係値−' }],
+      choices: [{ reply: `${s.partner?.name}（爆笑）${kk(s.partner?.name, '「よっしゃ！ ほな、書くのは任せた！」', '「決まり！ じゃあ、書くのはお任せします！」')}`, label: '新ネタにする', hint: '完成度リセット・カード＋' }, { reply: `${s.partner?.name}（落ち込み）${kk(s.partner?.name, '「……いつものな。いつもの、ええよな」', '「……いつもの、ね。いつものも、いいわよね」')}`, label: '「いつものでいこう」', hint: '関係値−' }],
     }),
     resolve: (s, c, rng) => {
       if (c === 0) {
@@ -429,12 +432,12 @@ export const STORIES: Record<string, StoryDef> = {
           lines: [
             `ナレーション：ネタ合わせの途中。${pn}が、同じところで3回目の言い直しをした。`,
             `${s.player.callName}（怒り）「そこ、さっきも言うたやん」`,
-            `${pn}（怒り）「言い方あるやろ」`,
+            `${pn}（怒り）${kk(pn, '「言い方あるやろ」', '「言い方があるでしょう」')}`,
             'ナレーション：ファミレスのテーブルが静かになった。ドリンクバーの氷だけが鳴っている。',
           ],
           choices: [
-            { reply: `${pn}（落ち込み）「……いや、俺も悪い。もう1回やろ」`, label: '「ごめん、言い方悪かった」と先に謝る', hint: '関係値＋' },
-            { reply: `ナレーション：その日、${pn}は帰るまで一言もしゃべらなかった。`, label: '「事実やろ」と言い返す', hint: '関係値−・尖り＋' },
+            { reply: `${pn}（落ち込み）${kk(pn, '「……いや、俺も悪い。もう1回やろ」', '「……いえ、わたしも悪い。もう1回やりましょう」')}`, label: '「ごめん、言い方悪かった」と先に謝る', hint: '関係値＋' },
+            { reply: `ナレーション：その日、${pn}は帰るまで一言もしゃべらなかった。`, label: '「事実やろ」と言い返す', hint: '関係値−' },
             { reply: `ナレーション：外の空気を吸って戻ると、${pn}がドリンクを2つ取ってきていた。`, label: '黙って一回、外に出る', hint: '関係値−' },
           ],
         },
@@ -454,12 +457,12 @@ export const STORIES: Record<string, StoryDef> = {
           title: 'ネタの取り分',
           lines: [
             `ナレーション：同期に「あのネタ、どっちが書いたん？」と聞かれた。`,
-            `${pn}（笑い）「ほぼ俺やな」`,
+            `${pn}（笑い）${kk(pn, '「ほぼ俺やな」', '「ほぼ、わたしね」')}`,
             'ナレーション：ほぼ半分は、こっちが書いた。',
           ],
           choices: [
-            { reply: `${pn}（笑い）「……せやな。半分な。いや、6対4やな」`, label: '笑って「半分やろ」とツッコむ', hint: '関係値＋・対応力＋' },
-            { reply: `ナレーション：同期が気まずそうに席を外した。${pn}は「冗談やん」と言ったが、目が笑っていなかった。`, label: '「いや、オチは全部こっちやろ」と言い返す', hint: '関係値−' },
+            { reply: `${pn}（笑い）${kk(pn, '「……せやな。半分な。いや、6対4やな」', '「……そうね。半分。いえ、6対4ね」')}`, label: '笑って「半分やろ」とツッコむ', hint: '関係値＋・対応力＋' },
+            { reply: `ナレーション：同期が気まずそうに席を外した。${pn}は${kk(pn, '「冗談やん」', '「冗談よ」')}と言ったが、目が笑っていなかった。`, label: '「いや、オチは全部こっちやろ」と言い返す', hint: '関係値−' },
             { reply: 'ナレーション：何も言わなかった。帰りの電車で、そのことばかり考えていた。', label: '黙っておく', hint: 'やる気−' },
           ],
         },
@@ -473,7 +476,6 @@ export const STORIES: Record<string, StoryDef> = {
         if (v === 2) gain(s, 'adlib', 2)
       } else if (c === 1) {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 4 : 10))
-        if (v === 0) s.edge += 2
       } else if (v === 2) s.motivation = clamp(s.motivation - 5)
       else {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 2 : 6))
@@ -528,7 +530,10 @@ export const STORIES: Record<string, StoryDef> = {
         seniorName(s, p.senior) === 'ナカジ' ? 'ナカジ（笑い）「今度の日曜、引っ越し手伝ってくれない？」' : `${seniorName(s, p.senior)}（笑い）「今度の日曜、引っ越し手伝ってくれへん？」`,
         'ナレーション：先輩の引っ越しは、お下がりがもらえる狙い目らしい。',
       ],
-      choices: [{ reply: `${seniorName(s, p.senior)}（笑い）「助かるわ。冷蔵庫と、あとネタ帳以外は全部持って帰ってええで」`, label: '手伝う', hint: '仲の良さ＋・体調−' }, { reply: `${seniorName(s, p.senior)}（ふつう）「そっか。バイトは大事にせえよ」`, label: 'バイトがあるので断る', hint: '仲の良さ−' }],
+      choices:
+        seniorName(s, p.senior) === 'ナカジ'
+          ? [{ reply: 'ナカジ（笑い）「助かる。冷蔵庫と、あとネタ帳以外は全部持って帰っていいよ」', label: '手伝う', hint: '仲の良さ＋・体調−' }, { reply: 'ナカジ（ふつう）「そっか。バイトは大事にしなね」', label: 'バイトがあるので断る', hint: '仲の良さ−' }]
+          : [{ reply: `${seniorName(s, p.senior)}（笑い）「助かるわ。冷蔵庫と、あとネタ帳以外は全部持って帰ってええで」`, label: '手伝う', hint: '仲の良さ＋・体調−' }, { reply: `${seniorName(s, p.senior)}（ふつう）「そっか。バイトは大事にせえよ」`, label: 'バイトがあるので断る', hint: '仲の良さ−' }],
     }),
     resolve: (s, c, _r, p) => {
       const senior = s.seniors.find((x) => x.id === p.senior)
@@ -540,7 +545,6 @@ export const STORIES: Record<string, StoryDef> = {
         s.flags.jacket = true
       } else {
         senior.like = clamp(senior.like - 3)
-        s.edge += 1
       }
     },
   },
@@ -559,19 +563,20 @@ export const STORIES: Record<string, StoryDef> = {
         s.money += 30000
         s.risk += 60
         s.weekLog.push('車で待機して、10分ネタをやって帰った。3万円が手元に残った。')
-      } else s.edge += 2
+      }
     },
   },
   naitei: {
     view: (s) => ({
       title: '相方の内定',
-      lines: [`${s.partner?.name}（落ち込み）「実は……広告会社から、内定もらってて」`, 'ナレーション：大学お笑い出身あるある。卒業とともに、みんな就職していく。'],
-      choices: [{ reply: `${s.partner?.name}（考え中）「……1年だけ、待ってもらえるか聞いてみる」`, label: '説得する', hint: '関係値しだい' }, { reply: `${s.partner?.name}（照れ）「ごめん。……テレビで見たら、会社のみんなに自慢するわ」`, label: '背中を押して、新しい相方を探す', hint: '梅組からやり直し' }],
+      lines: [`${s.partner?.name}（落ち込み）「広告会社の人事から、電話あってん。“入社の意思、年内に聞かせてほしい”って」`, `${s.partner?.name}（考え中）「研修のメール、見てたやろ。……ずっと、返事を先延ばしにしててん」`, 'ナレーション：大学お笑い出身あるある。卒業とともに、みんな就職していく。'],
+      choices: [{ reply: `${s.partner?.name}（考え中）「……1年だけ、待ってもらえるか聞いてみる」`, label: '説得する', hint: '関係値しだい' }, { reply: `${s.partner?.name}（照れ）「ごめん。……テレビで見たら、会社のみんなに自慢するわ」`, label: '背中を押して、新しい相方を探す', hint: s.classRank === 'none' ? '組み直し' : '梅組からやり直し' }],
     }),
     resolve: (s, c, rng) => {
       if (!s.partner) return
       if (c === 0 && s.partner.bond + rng.int(0, 30) >= 60) {
         s.partner.bond = clamp(s.partner.bond + 10)
+        s.flags.naitei_declined = true
         s.weekLog.push(`${s.partner.name}は内定を断った。「お前とやる方がおもろいわ」`)
       } else {
         s.weekLog.push(`${s.partner.name}は就職を選んだ。`)
@@ -583,7 +588,7 @@ export const STORIES: Record<string, StoryDef> = {
     view: (s) => ({
       title: '解散の危機',
       lines: ['ナレーション：寄席の合間。', `${s.partner?.name}（落ち込み）「……続ける自信がない」`],
-      choices: [{ reply: `${s.partner?.name}（落ち込み）「……始発、もう出てもうたな。……もうちょっと、やってみる」`, label: '朝まで話し合う', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（ふつう）「……ありがとう。おもろかったで、ほんまに」`, label: '解散する', hint: '梅組からやり直し' }],
+      choices: [{ reply: `${s.partner?.name}（落ち込み）${kk(s.partner?.name, '「……始発、もう出てもうたな。……もうちょっと、やってみる」', '「……始発、もう出ちゃった。……もう少し、やってみる」')}`, label: '朝まで話し合う', hint: '関係値＋・やる気−' }, { reply: `${s.partner?.name}（ふつう）${kk(s.partner?.name, '「……ありがとう。おもろかったで、ほんまに」', '「……ありがとう。楽しかった、本当に」')}`, label: '解散する', hint: s.classRank === 'none' ? '組み直し' : '梅組からやり直し' }],
     }),
     resolve: (s, c) => {
       if (c === 0 && s.partner) {
@@ -594,37 +599,47 @@ export const STORIES: Record<string, StoryDef> = {
   },
   debt: {
     view: (s) => {
-      const savior = s.seniors.find((x) => x.like >= 50)
+      const { savior, friend } = debtHelpers(s)
       // バイト先の店長がお金を貸してくれる【research/02 店長が病院代を貸してくれた】
       const tencho = !savior && affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan
+      // 仲は良いが、まだ認めてもらえていない先輩は、飯だけ奢ってくれる（仲と認めの2軸【設定書 4章】）
+      const meal = friend
+        ? [friend.name === 'ナカジ' ? 'ナカジ（ふつう）「お金は貸せないけど、ご飯は奢るよ。……住まわせるほどは、まだ君のネタ知らないし」' : `${friend.name}（ふつう）「金は貸せんけど、飯は奢ったる。……住まわせるほどは、まだお前のネタ知らんしな」`]
+        : []
       return {
         title: 'お金が尽きた',
         lines: savior
           ? ['ナレーション：家賃が払えない。', savior.name === 'ナカジ' ? 'ナカジ（ふつう）「しばらく、うちに住めば？」' : `${savior.name}（ふつう）「しばらく、うちに住めや」`]
           : tencho
-            ? ['ナレーション：家賃が払えない。バイトの休憩中、通帳を見てため息をついたのを、店長に見られた。', '店長（ふつう）「なんぼ足りへんねん。……ええから、売れたら返せ」']
-            : ['ナレーション：家賃が払えない。実家に電話した。', 'ナレーション：母は何も聞かずに5万円を振り込んでくれた。振込名義が「ガンバレ」になっていた。'],
+            ? ['ナレーション：家賃が払えない。', ...meal, 'ナレーション：バイトの休憩中、通帳を見てため息をついたのを、店長に見られた。', '店長（ふつう）「なんぼ足りへんねん。……ええから、売れたら返せ」']
+            : ['ナレーション：家賃が払えない。', ...meal, 'ナレーション：実家に電話した。母は何も聞かずに5万円を振り込んでくれた。振込名義が「ガンバレ」になっていた。'],
         choices: [],
       }
     },
     resolve: (s) => {
-      const savior = s.seniors.find((x) => x.like >= 50)
-      if (!savior && affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan) {
+      const { savior, friend } = debtHelpers(s)
+      if (savior) {
+        s.money += 30000
+        savior.like = clamp(savior.like + 5)
+        s.flags.isourou = true
+        return
+      }
+      if (friend) {
+        s.money += 5000
+        s.motivation = clamp(s.motivation + 5)
+        friend.like = clamp(friend.like + 3)
+      }
+      if (affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan) {
         s.flags.tencho_loan = true
         s.money += 40000
         tie(s, 'tencho', 8)
         return
       }
-      if (savior) {
-        s.money += 30000
-        savior.like = clamp(savior.like + 5)
-        s.flags.isourou = true
-      } else {
-        s.money += 50000
-        s.motivation = clamp(s.motivation - 10)
-      }
+      s.money += 50000
+      s.motivation = clamp(s.motivation - 10)
     },
   },
+
 }
 
 Object.assign(STORIES, DEV_STORIES, YEAR_STORIES, PARTNER_STORIES, RIVAL_STORIES, SENPAI_STORIES, CAREER_STORIES)

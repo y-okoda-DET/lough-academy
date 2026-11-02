@@ -24,7 +24,7 @@ export interface NewGameInput {
   seed?: number
   // 経歴（careers.ts）。卒業するたびに選べる経歴が増える
   background?: string
-  // ここから下は固定（東京の実家住まい・性別ごとの見た目）。テストだけが変える
+  // ここから下は固定（大阪から上京して一人暮らし・性別ごとの見た目）。テストだけが変える
   origin?: Origin
   hairColor?: string
   outfit?: string
@@ -56,7 +56,7 @@ function withRng(s: GameState, fn: (rng: Rng) => void): void {
 export function createGame(raw: NewGameInput): GameState {
   const gender = raw.gender ?? 'male'
   const look = PLAYER_LOOK[gender]
-  const input = { ...raw, gender, background: raw.background ?? 'fresh', origin: raw.origin ?? 'local', hairColor: raw.hairColor ?? look.hairColor, outfit: raw.outfit ?? look.outfit }
+  const input = { ...raw, gender, background: raw.background ?? 'fresh', origin: raw.origin ?? 'tokyo', hairColor: raw.hairColor ?? look.hairColor, outfit: raw.outfit ?? look.outfit }
   const bg = BACKGROUND_BY_ID[input.background]
   const base: Stats = { idea: 15, word: 15, expr: 15, guts: 15, adlib: 15, stamina: 15, ...bg.stats }
   const s: GameState = {
@@ -71,12 +71,9 @@ export function createGame(raw: NewGameInput): GameState {
     partner: null,
     comboName: '',
     seniors: INITIAL_SENIORS.map((x) => ({ ...x })),
-    dokiBond: 20,
     staffEval: 10,
     outsideRep: input.background === 'chika' ? 25 : input.background === 'circle' ? 20 : 5,
     fans: 0,
-    safePlay: 0,
-    edge: 0,
     risk: 0,
     cards: [...STARTER_CARDS, ...(bg.cards ?? [])],
     neta: { cards: { tsukami: 't_jikoshoukai', tenkai: input.style === 'conte' ? 'k_konbini' : 'k_aruaru', ochi: input.style === 'conte' ? 'o_hanten' : 'o_mouee' }, polish: 15 },
@@ -222,7 +219,11 @@ function applyDay(s: GameState, a: DayAction, rng: Rng): void {
         s.fans += rng.int(1, 3) * (has(s, 'chika') ? 2 : 1)
         log.push(flavor('jishulive_good', rng, { audience: String(audience) }))
       } else log.push(flavor('jishulive_bad', rng, { audience: String(audience) }))
-      if (rng.chance(0.1)) log.push(flavor('jishulive_fee', rng))
+      // 聞いていなかった追加の出費（エントリー料の差額・ノルマ・ドリンク代・打ち上げ代）
+      if (rng.chance(0.1)) {
+        s.money -= 3000
+        log.push(`${flavor('jishulive_fee', rng)}（−3,000円）`)
+      }
       break
     }
     case 'kangeki': {
@@ -267,14 +268,14 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
       senior.like = clamp(senior.like + (has(s, 'kawaigarare') ? 11 : 7) + (has(s, 'hitorashi') ? 3 : 0))
       s.condition = clamp(s.condition - 10)
       s.money += 2500 // ごちそうになった分、食費が浮く
-      s.safePlay += 1
-      count(s, 'nomi')
+      // 先輩の飲みに12回ついて行くと、もう誘いを断れなくなる
+      if (count(s, 'nomi') >= 12) addSkill(s, 'kotowarenai', '◆先輩の飲みについて行くのも、これで12回目。誘われると、もう断れない。クセ「断れない」がついた。')
       log.push(flavor('nomi', rng, { senior: senior.name }))
       // 飲みを重ねると、その先輩の話が進む（最後の話で特殊能力を受け継げることがある）
       seniorDrama(s, senior.id)
       if (senior.respect >= 40) {
         s.neta.polish = clamp(s.neta.polish + 5)
-        log.push(flavor('nomi_neta', rng, { senior: senior.name }))
+        log.push(flavor(senior.id === 'nakaji' ? 'nomi_neta_std' : 'nomi_neta', rng, { senior: senior.name }))
       } else if (senior.like >= 50) log.push(flavor('nomi_noneta', rng, { senior: senior.name }))
       if (has(s, 'orei')) {
         senior.like = clamp(senior.like + 3)
@@ -284,7 +285,6 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
     }
     case 'douki':
       s.money -= 3000
-      s.dokiBond = clamp(s.dokiBond + 6)
       for (const id of classmatesOf(s)) tie(s, id, 4)
       s.motivation = clamp(s.motivation + 6)
       s.condition = clamp(s.condition - 5)
@@ -383,7 +383,7 @@ function scheduleEvents(s: GameState, rng: Rng): void {
   if (month === 8 && week === 3 && s.player.style === 'manzai') story(s, 'contest_entry', { kind: 'contest_manzai' })
   if (month === 9 && week === 1) s.weekLog.push(`もうすぐ9月2週の強化合宿。参加費4万円は、出発の朝に現金で払う。財布の中は${yen(s.money)}。`)
   if (month === 9 && week === 2) story(s, 'gasshuku')
-  if (month === 12 && week === 1 && s.player.background === 'circle' && !s.flags.naitei_done) {
+  if (month === 12 && week === 1 && s.player.background === 'circle' && s.partner?.name === '佐倉' && !s.flags.naitei_done) {
     s.flags.naitei_done = true
     story(s, 'naitei')
   }
@@ -394,20 +394,26 @@ function scheduleEvents(s: GameState, rng: Rng): void {
   for (const key of careerEvents(s, month, week)) story(s, key)
 
   // 発展イベントかランダムイベント（週に1つまで）。発展イベントが起きられるなら、そちらを優先しやすい
-  const bonded = s.pending.length === 0 && rng.chance(0.7) && scheduleBondEvent(s, rng)
+  // 10月からは毎週なにかの行事があるので、発展イベントだけは行事の週にも（半分くらいの確率で）起きる
+  const free = s.pending.length === 0
+  const bonded = (free ? rng.chance(0.7) : s.turn >= turnOf(10, 1) && rng.chance(0.5)) && scheduleBondEvent(s, rng)
   if (!bonded && s.pending.length === 0 && rng.chance(0.25)) {
     const pool: [string, Record<string, string | number>?][] = []
-    if (s.partner) pool.push(['shinneta'], ['loan'])
+    // 「ネタを一行も書かない相方」の話なので、ネタを書く堂島と佐倉には起きない
+    if (s.partner && s.partner.name !== '堂島' && s.partner.name !== '佐倉') pool.push(['shinneta'])
+    if (s.partner) pool.push(['loan'])
     // 相方と仲がいいときほど、ささいな喧嘩が起きやすい
     if (s.partner && s.partner.bond >= 50) pool.push(['kenka', { v: rng.int(0, 2) }], ['kenka', { v: rng.int(0, 2) }])
     pool.push(['line_kidoku'], ['barashi'])
     if (s.player.origin === 'tokyo') pool.push(['coin_shower'])
     const friend = s.seniors.find((x) => x.like >= 40)
     if (friend) pool.push(['hikkoshi', { senior: friend.id }])
-    if (s.outsideRep >= 30 && !s.flags.chokueigyou_seen && month >= 10) pool.push(['chokueigyou'], ['chokueigyou'])
+    if (s.outsideRep >= 30 && !s.flags.chokueigyou_seen && month >= 8) pool.push(['chokueigyou'], ['chokueigyou'])
     const [key, params] = rng.pick(pool)
     story(s, key, params)
   }
+  // 事務所に内緒の営業の話は、自主ライブ界隈で顔が売れてくると、行事の週にも来る
+  else if (!free && !bonded && month >= 10 && s.outsideRep >= 30 && !s.flags.chokueigyou_seen && rng.chance(0.2)) story(s, 'chokueigyou')
   if (s.partner && s.partner.bond < 12 && !s.flags.kaisan_warned) {
     s.flags.kaisan_warned = true
     story(s, 'kaisan')
@@ -465,7 +471,7 @@ export function doStage(prev: GameState, showcase: ('great' | 'good' | 'miss')[]
   s.weekLog = []
   withRng(s, (rng) => {
     const r = performStage(s, ev.kind, rng, showcase)
-    withGainScale(TUNING.stage, () => applyStageEffects(s, r, rng))
+    if (!r.unseen) withGainScale(TUNING.stage, () => applyStageEffects(s, r, rng))
     s.lastStage = r
     s.stageHistory.push(r)
   })
@@ -538,7 +544,9 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
     case 'live':
       s.fans += r.level * 3 + (r.level === 3 ? 5 : 0)
       s.staffEval = clamp(s.staffEval + r.level * 2)
-      if (r.level >= 2) r.lines.push(`作家票・社員票で上位${r.level === 3 ? '1' : '3'}組に入った。`)
+      // 順位は結果画面の「20組中◯位」と同じものを使う
+      if (r.rank === 1) r.lines.push('作家票・社員票で1位になった。')
+      else if (r.rank && r.rank <= 3) r.lines.push(`作家票・社員票で上位3組に入った（${r.rank}位）。`)
       break
     case 'contest_conte':
     case 'contest_manzai': {
@@ -560,13 +568,19 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
     }
     case 'gasshuku':
       // 前の晩に止められたネタで、どこまで取り返せたか
+      if (s.flags.gasshuku_0) {
+        r.lines.push(r.level >= 1 ? '辻堂「……頭から変えてきたな」' : '辻堂「頭から変えてきたんはええ。中身が追いついてへん」')
+        s.teacherEval = clamp(s.teacherEval + 3)
+        tie(s, 'tsujido', 3)
+      }
+      else if (s.flags.gasshuku_1) r.lines.push('辻堂「……同じもんやな。仕上がりだけは上がっとる」')
       if (r.level >= 2) {
         r.verdict = { head: '強化合宿', text: 'MVP！', good: true }
         r.lines.push('辻堂は、昨日と同じ席で腕を組んだまま、一回だけ頷いた。')
         r.lines.push('閉校式で、合宿MVPに名前を呼ばれた。「MVPは必ず売れる」というジンクスがあるらしい。')
         s.motivation = clamp(s.motivation + 15)
         s.staffEval = clamp(s.staffEval + 10)
-        s.teacherEval = clamp(s.teacherEval + 6)
+        s.teacherEval = clamp(s.teacherEval + (s.flags.gasshuku_1 ? 2 : 6))
         tie(s, 'tsujido', 6)
         count(s, 'mvp')
       } else if (r.level === 1) {
@@ -580,6 +594,11 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
         tie(s, 'tsujido', 2)
         gain(s, 'guts', 2)
       }
+      break
+    case 'sankou':
+      s.staffEval = clamp(s.staffEval + 2 + r.level * 2)
+      s.fans += 2 + r.level * 2
+      r.lines.push(r.level >= 2 ? '終演後、他校の講師に「どこのクラス？」と聞かれた。' : r.level === 1 ? 'ワイシャツ同盟の方が、ひとつ多く笑いを取っていた。' : '他校の生徒が、終わるまでずっとパンフレットを読んでいた。')
       break
     case 'tozai':
       s.staffEval = clamp(s.staffEval + r.level * 4)

@@ -1,6 +1,6 @@
 import { affinity, classmatesOf, tie } from './bonds'
 import { PARTNER_CANDIDATES } from './data/people'
-import { clamp, count, gain, has, push, story } from './core'
+import { clamp, count, gain, has, kk, push, story } from './core'
 import type { StoryDef } from './events'
 import { KODAWARI, KODAWARI_KEYS, recall } from './kodawari'
 import { makePartner, nextPartnerBase } from './partner'
@@ -22,6 +22,11 @@ const LEAVE_REASON: Record<string, { line: string; why: string }> = {
   岸辺: { line: '「劇団から、戻ってこいって言われてる」', why: '劇団に戻る' },
   早瀬: { line: '「就職、決まってん。親に、もう1年は無理って言われた」', why: '就職する' },
   佐倉: { line: '「やっぱり、内定の会社に行こうと思う」', why: '就職する' },
+}
+// 12月に内定を断った佐倉が、2月にもう一度迷うとき
+const SAKURA_DECLINED = {
+  leave: { line: '「断った会社が、4月まで席を空けてくれてるねん。……行こうと思う」', why: '就職する' },
+  stay: '佐倉は、人事からの最後の電話にも出なかった。「もう断ったって言うたやろ」と、留守電にだけ返した。',
 }
 
 // 卒業式で左隣にいる同期。いちばん仲のいい同期（相方以外）
@@ -59,17 +64,17 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           ? [
               `ナレーション：${a}の番。司会が「この人と組んでみたい人！」と聞く。`,
               `ナレーション：手を挙げたのは、${me(s)}だけだった。${a}も、${me(s)}の番で手を挙げてくれていた。`,
-              `${a}（笑い）「組もうや、絶対おもろいって」`,
+              `${a}（笑い）${kk(a, '「組もうや、絶対おもろいって」', '「組みましょう。絶対、面白くなる」')}`,
               'ナレーション：その場でコンビ結成。教室の後ろで、拍手がまばらに起きた。',
             ]
           : p.o === 'yon'
             ? [
                 `ナレーション：${a}と手が挙がり合って、その場でコンビ結成。`,
                 `ナレーション：その足でファミレスへ。ネタの方向性、ボケとツッコミ、どっちが書くか。`,
-                `${a}（怒り）「いや、それはちゃうやろ」`,
+                `${a}（怒り）${kk(a, '「いや、それはちゃうやろ」', '「いや、それは違うでしょう」')}`,
                 'ナレーション：4時間後、ドリンクバーのグラスが空のまま、解散した。',
                 `ナレーション：帰り道、駅で${b}に声をかけられた。`,
-                `${b}（照れ）「さっきの、見てた。……俺と、組まへん？」`,
+                `${b}（照れ）${kk(b, '「さっきの、見てた。……俺と、組まへん？」', '「さっきの、見てた。……わたしと、組まない？」')}`,
               ]
             : [
                 `ナレーション：${a}に手を挙げた。${a}は、別の人と組んだ。`,
@@ -138,13 +143,12 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         `ナレーション：同期は${s.classmates}人になった。`,
       ],
       choices: [
-        { reply: 'ナレーション：「元気？」とだけ送った。送信ボタンを押す指が、少し重かった。', label: '鮫島にLINEを送る', hint: '同期の結束＋・やる気−' },
+        { reply: 'ナレーション：「元気？」とだけ送った。送信ボタンを押す指が、少し重かった。', label: '鮫島にLINEを送る', hint: 'やる気−' },
         { reply: 'ナレーション：同期LINEの通知は、その日も200件を超えていた。', label: '送らない', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
       if (c === 0) {
-        s.dokiBond = clamp(s.dokiBond + 5)
         s.motivation = clamp(s.motivation - 4)
         s.weekLog.push('鮫島から返事が来た。「がんばってな」。それだけだった。')
       } else gain(s, 'guts', 2)
@@ -325,14 +329,13 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         `${pn(s)}（ふつう）「それ、ほんまのことや」`,
       ],
       choices: [
-        { reply: `${pn(s)}（笑い）「うまいやん！ 将来、たこ焼き屋で食っていけるで」`, label: 'たこ焼きを焼く', hint: 'お金＋・同期の結束＋' },
+        { reply: `${pn(s)}（笑い）「うまいやん！ 将来、たこ焼き屋で食っていけるで」`, label: 'たこ焼きを焼く', hint: 'お金＋' },
         { reply: `${pn(s)}（爆笑）「今の答え、客席の講師が一番笑ってたで」`, label: '大喜利のステージに出る', hint: '対応力＋・ファン＋' },
       ],
     }),
     resolve: (s, c) => {
       if (c === 0) {
         s.money += 3000
-        s.dokiBond = clamp(s.dokiBond + 6)
         for (const id of classmatesOf(s)) tie(s, id, 3)
       } else {
         gain(s, 'adlib', 3)
@@ -367,12 +370,9 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
     },
     resolve: (s, c) => {
       const chosen = s.classRank === 'matsu' || !!s.flags.tokushin
-      if (chosen) {
-        s.staffEval = clamp(s.staffEval + 5)
-        s.fans += 4
-      }
       if (c === 0) gain(s, 'idea', 3)
       else s.neta.polish = clamp(s.neta.polish + 8)
+      if (chosen) push(s, { type: 'stage', kind: 'sankou' })
     },
   },
 
@@ -443,14 +443,14 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           title: '正社員の話',
           place: 'baito',
           lines: [
-            'ナレーション：バイトの閉店後。店長が、珍しくまじめな顔で座った。',
+            (s.counters.baito ?? 0) > 0 ? 'ナレーション：バイトの閉店後。店長が、珍しくまじめな顔で座った。' : 'ナレーション：夏に一度だけ、短期で手伝った居酒屋。店長から電話が来て、閉店後の店に呼ばれた。',
             '店長（ふつう）「4月から、正社員にならへんか。給料も上がる。まかないは食べ放題や」',
             '店長（笑い）「ライブの日は……まあ、月1回くらいなら休んでええ」',
             'ナレーション：通帳の残高を思い出した。正社員の給料なら、来年は家賃の心配をしなくていい。',
             ...recall(s),
           ],
           choices: [
-            { reply: '店長（ふつう）「おう。急がんでええ。席は空けとくわ」', label: '「考えさせてください」', hint: 'お金＋' },
+            { reply: '店長（ふつう）「おう。急がんでええ。席は空けとくわ」', label: '「考えさせてください」', hint: '体調＋・やる気−' },
             { reply: '店長（爆笑）「言うたな！ ほな売れるまで、まかないはおかわり1回までや」', label: '「まかない食べ放題は、売れてからにします」', hint: 'やる気＋' },
           ],
         },
@@ -465,7 +465,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ...recall(s),
           ],
           choices: [
-            { reply: 'ナレーション：「ほな、連絡して」。同期は改札の向こうで手を振った。', label: '「……ちょっと考える」', hint: 'お金＋' },
+            { reply: 'ナレーション：「ほな、連絡して」。同期は改札の向こうで手を振った。', label: '「……ちょっと考える」', hint: '体調＋・やる気−' },
             { reply: 'ナレーション：同期は笑った。「なんやそれ。……ほな、売れたら自慢させてな」', label: '「なんとなく、まだ辞めへん」', hint: 'やる気＋' },
           ],
         },
@@ -486,7 +486,10 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           gain(s, 'expr', 3)
         }
       } else if (c === 0) {
-        s.money += 20000
+        // 返事を保留した。逃げ道ができて少し楽になったが、迷いは残る
+        s.condition = clamp(s.condition + 6)
+        s.motivation = clamp(s.motivation - 6)
+        s.weekLog.push('返事は保留にした。逃げ道があると思うと、少しだけ眠れるようになった。そのぶん、ネタ帳を開く手が重い。')
       } else {
         s.motivation = clamp(s.motivation + 10)
         if (k === 'kane') tie(s, 'tencho', 4)
@@ -500,7 +503,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       title: 'セリフが飛んだ',
       place: 'butai',
       lines: [
-        'ナレーション：12月のほやほや。ネタの真ん中、いちばんの見せ場の手前。',
+        'ナレーション：12月、年忘れの特別ほやほや。ネタの真ん中、いちばんの見せ場の手前。',
         ...(scriptOf(s)?.flub(me(s)) ?? []),
         `ナレーション：${pn(s)}の口が止まった。セリフが飛んだ。`,
         'ナレーション：1秒、2秒、3秒。客席の空気が、すっと冷えていくのがわかる。',
@@ -539,7 +542,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ],
             choices: [
               { reply: `${pn(s)}（笑い）「……ほな、毎回飛ばさなあかんやん」`, label: '「あの流れ、ネタに入れよか」', hint: 'ネタの完成度＋・関係値＋' },
-              { reply: `${pn(s)}（落ち込み）「……うん。分かってる」`, label: '「次は飛ばすなよ」と釘を刺す', hint: '尖り＋' },
+              { reply: `${pn(s)}（落ち込み）「……うん。分かってる」`, label: '「次は飛ばすなよ」と釘を刺す' },
             ],
           }
         : {
@@ -555,7 +558,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ],
             choices: [
               { reply: `${pn(s)}（驚き）「……なんで、そっちが謝んねん」`, label: '追いかけて、先に謝る', hint: '関係値＋' },
-              { reply: 'ナレーション：送信してから、言い方を3回後悔した。', label: '「なんで飛ばすねん」とLINEを送る', hint: '関係値−・尖り＋' },
+              { reply: 'ナレーション：送信してから、言い方を3回後悔した。', label: '「なんで飛ばすねん」とLINEを送る', hint: '関係値−' },
               { reply: 'ナレーション：始発の時間。ベンチの横に、缶コーヒーが1本置いてあった。', label: 'ベンチに座ったまま朝を待つ', hint: 'やる気−' },
             ],
           },
@@ -567,16 +570,14 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           s.neta.polish = clamp(s.neta.polish + 6)
         } else {
           s.partner.bond = clamp(s.partner.bond - 3)
-          s.edge += 2
         }
         return
       }
       if (c === 0) {
         s.partner.bond = clamp(s.partner.bond + 12)
-        s.weekLog.push(`駅のホームで追いついた。${s.partner.name}は「……俺もごめん」とだけ言った。`)
+        s.weekLog.push(`駅のホームで追いついた。${s.partner.name}は${kk(s.partner.name, '「……俺もごめん」', '「……わたしも、ごめん」')}とだけ言った。`)
       } else if (c === 1) {
         s.partner.bond = clamp(s.partner.bond - (has(s, 'aikata') ? 8 : 20))
-        s.edge += 4
         s.weekLog.push('既読はついた。返事は3日来なかった。')
       } else {
         s.partner.bond = clamp(s.partner.bond - 6)
@@ -592,7 +593,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       title: '東西寄席合戦（ホーム戦）',
       place: 'butai',
       lines: s.flags.tozai_chosen
-        ? ['ナレーション：東西寄席合戦、今度はホーム。客席には同期の顔が見える。', `ナレーション：アウェイで負けた分を、ここで返す。${s.comboName}の出番は3番目。`]
+        ? ['ナレーション：東西寄席合戦、今度はホーム。客席には同期の顔が見える。', `ナレーション：${(s.stageHistory.find((r) => r.kind === 'tozai')?.level ?? 0) >= 2 ? 'アウェイの勢いのまま、ここでもう一回。' : 'アウェイで負けた分を、ここで返す。'}${s.comboName}の出番は3番目。`]
         : ['ナレーション：東西寄席合戦、ホーム戦。差し入れ係として袖から観た舞台は、客席から観るより、ずっと明るかった。'],
       choices: [],
     }),
@@ -616,7 +617,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       choices: [
         { reply: 'ナレーション：「辞める理由が、ネタにならなかったからです」。王者は少しも笑わずに言った。', label: '「なんで辞めなかったんですか」と聞く', hint: 'やる気＋' },
         { reply: 'ナレーション：書き写してみると、ボケは思ったより少なかった。', label: '王者のネタの構成を書き写す', hint: 'ワード力＋・発想力＋' },
-        { reply: 'ナレーション：「待ってます。8年は長いですよ」。教室が少しだけ笑った。', label: '「8年後、ここに凱旋しに来ます」と宣言する', hint: '度胸＋・尖り＋' },
+        { reply: 'ナレーション：「待ってます。8年は長いですよ」。教室が少しだけ笑った。', label: '「8年後、ここに凱旋しに来ます」と宣言する', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
@@ -627,7 +628,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         gain(s, 'idea', 2)
       } else {
         gain(s, 'guts', 3)
-        s.edge += 2
       }
     },
   },
@@ -641,13 +641,13 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         'ナレーション：卒業前の課題は、班ごとにライブを1本作ること。企画、構成、出演、全部自分たちで。',
         ...(s.partner?.name === '堂島'
           ? ['ナレーション：同じ班には作家志望の子がいた。台本の直しが細かい。', 'ナレーション：「そこは削った方がええって。オチが2個あったら、どっちも弱なる」']
-          : ['ナレーション：同じ班には、作家もやりたいと言い出した堂島がいた。台本の直しが細かい。', '堂島（怒り）「そこは削った方がええって。オチが2個あったら、どっちも弱なる」']),
+          : ['ナレーション：同じ班には、台本の直しが異様に細かい堂島がいた。「作家もやってみたい」と、その日初めて聞いた。', '堂島（怒り）「そこは削った方がええって。オチが2個あったら、どっちも弱なる」']),
         `${me(s)}（怒り）「どっちも要るねん」`,
       ],
       choices: [
         { reply: 'ナレーション：構成表を書いたら、自分の出番が一番短くなっていた。', label: '企画と構成に回る', hint: '発想力＋・ワード力＋' },
         { reply: 'ナレーション：出演に専念した。一番ウケたのは、台本になかった一言だった。', label: '出演に専念する', hint: '表現力＋' },
-        { reply: 'ナレーション：本番、オチは2つとも残した。2つ目の方が、少しだけウケた。', label: '意見を曲げない', hint: '尖り＋・度胸＋' },
+        { reply: 'ナレーション：本番、オチは2つとも残した。2つ目の方が、少しだけウケた。', label: '意見を曲げない', hint: '度胸＋' },
       ],
     }),
     resolve: (s, c) => {
@@ -657,7 +657,6 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         gain(s, 'word', 2)
       } else if (c === 1) gain(s, 'expr', 3)
       else {
-        s.edge += 3
         gain(s, 'guts', 2)
       }
       s.weekLog.push('終演後、講師からのダメ出しは1時間続いた。')
@@ -670,7 +669,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       const p = s.partner
       if (!p) return { title: '4月から', place: 'heya', lines: ['ナレーション：卒業まであと少し。ひとりで、4月からのネタを書いた。'], choices: [] }
       const leaving = p.bond < 35
-      const reason = LEAVE_REASON[p.name] ?? LEAVE_REASON['佐倉']
+      const reason = p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.leave : (LEAVE_REASON[p.name] ?? LEAVE_REASON['佐倉'])
       const next = nextPartnerBase(s).name
       return {
         title: '4月から',
@@ -678,24 +677,24 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
         lines: leaving
           ? [
               `ナレーション：深夜のファミレス。${p.name}が、ドリンクバーのグラスを置いた。`,
-              `${p.name}（落ち込み）「話あんねん」`,
+              `${p.name}（落ち込み）${kk(p.name, '「話あんねん」', '「話があるの」')}`,
               `${p.name}（落ち込み）${reason.line}`,
               `ナレーション：同じ週、${next}から電話があった。「もし、ひとりになるんやったら……」`,
               ...recall(s),
             ]
           : [
               `ナレーション：深夜のファミレス。${p.name}が、4月からのライブの予定表を広げた。`,
-              `${p.name}（笑い）「4月から、劇場のオーディション全部出よな」`,
+              `${p.name}（笑い）${kk(p.name, '「4月から、劇場のオーディション全部出よな」', '「4月から、劇場のオーディションは全部出ましょう」')}`,
               `${me(s)}（ふつう）「……」`,
             ],
         choices: leaving
           ? [
               { reply: 'ナレーション：ドリンクバーの氷が溶ける音だけが、しばらく続いた。', label: `${p.name}を引き止める`, hint: '関係値しだい' },
-              { reply: `${next}（笑い）「よろしく。……ネタ合わせ、明日からでええ？」`, label: `${next}と組み直す` },
+              { reply: `${next}（笑い）${kk(next, '「よろしく。……ネタ合わせ、明日からでええ？」', '「よろしく。……ネタ合わせ、明日からでいい？」')}`, label: `${next}と組み直す` },
               { reply: 'ナレーション：ひとりで帰る道は、思っていたより静かだった。', label: 'ピンでやっていく' },
             ]
           : [
-              { reply: `${p.name}（爆笑）「全部や！ 全部落ちても、全部出る！」`, label: '「全部出よう」', hint: '関係値＋' },
+              { reply: `${p.name}（爆笑）${kk(p.name, '「全部や！ 全部落ちても、全部出る！」', '「全部よ！ 全部落ちても、全部出る！」')}`, label: '「全部出よう」', hint: '関係値＋' },
               { reply: `${p.name}（驚き）「……そうか。……ちょっと、考えさせて」`, label: '「ピンでやってみたい」と切り出す' },
             ],
       }
@@ -708,11 +707,11 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
       if (stay) {
         p.bond = clamp(p.bond + 10)
         if (leaving) s.weekLog.push(`${p.name}は、もう1年だけやると言った。「お前がそこまで言うなら」`)
-        const stayLine = PARTNER_STAY[p.name]
+        const stayLine = p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.stay : PARTNER_STAY[p.name]
         if (stayLine) s.weekLog.push(stayLine)
         return
       }
-      if (leaving && c === 0) s.weekLog.push(`${p.name}の気持ちは変わらなかった。「${LEAVE_REASON[p.name]?.why ?? '辞める'}」と決めていた。`)
+      if (leaving && c === 0) s.weekLog.push(`${p.name}の気持ちは変わらなかった。「${(p.name === '佐倉' && s.flags.naitei_declined ? SAKURA_DECLINED.leave : LEAVE_REASON[p.name])?.why ?? '辞める'}」と決めていた。`)
       const pin = leaving ? c === 2 || (c === 0 && rng.chance(0.5)) : true
       if (pin) {
         s.flags.pin = true
@@ -744,6 +743,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
     resolve: (s) => {
       s.condition = clamp(s.condition - 10)
       tie(s, 'haibara', 6)
+      s.flags.kyusai_done = true
       s.weekLog.push('照明と転換と受付を全部やった。卒業公演は、袖から観た。')
     },
   },
@@ -762,14 +762,14 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           '灰原（笑い）「ほら。両隣、見てみ」',
           ...gradLines(s),
           p
-            ? `ナレーション：右隣には${p.name}が座っていた。${s.flags.reform ? '組み直して、まだひと月。' : (gradPartnerLine(s) ?? '4月の相方見つけ会から、ずっと隣にいた。')}`
+            ? `ナレーション：右隣には${p.name}が座っていた。${s.flags.reform ? '組み直して、まだひと月。' : s.flags.mid_reform ? '途中から組んで、ここまで一緒に来た。' : (gradPartnerLine(s) ?? '4月の相方見つけ会から、ずっと隣にいた。')}`
             : 'ナレーション：右隣の席は、空いていた。ピンで残ることを選んだ。',
           ...(p ? [scriptOf(s)?.grad ?? `${p.name}（笑い）「なんや、じろじろ見て」`] : []),
           left ? `ナレーション：左隣には${left}。最後まで、ここに残った。` : 'ナレーション：左隣も、空いていた。',
-          s.flags.audition_3 ? 'ナレーション：卒業公演「巣立ち」では、その他大勢として舞台の端で踊った。' : 'ナレーション：卒業公演「巣立ち」。バトルではない。思い出という感じだった。',
+          s.flags.audition_3 && !s.flags.kyusai_done ? 'ナレーション：卒業公演「巣立ち」では、その他大勢として舞台の端で踊った。' : s.flags.kyusai_done ? 'ナレーション：卒業公演「巣立ち」は、照明の卓の横から観た。客席の笑いが、袖まで届いていた。' : 'ナレーション：卒業公演「巣立ち」。バトルではない。思い出という感じだった。',
           ...(affinity(s, 'mido') >= 35 ? ['御堂（笑い）「卒業おめでとう。……4月からは、ただの同業者だね」'] : []),
           ...(affinity(s, 'makabe') >= 35 ? ['真壁（笑い）「……メモ帳。あなたのページ、まだ続く」'] : []),
-          ...(s.kodawari ? [`ナレーション：「${KODAWARI[s.kodawari].label}」。面談でそう言ってから、11か月がたった。`] : []),
+          ...(s.kodawari ? [`ナレーション：「${KODAWARI[s.kodawari].label}」。面談でそう言ってから、10か月がたった。`] : []),
           'ナレーション：所属説明会。4月から、大笑興業の芸人になる。',
         ],
         choices: [],

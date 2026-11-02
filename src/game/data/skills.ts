@@ -7,6 +7,7 @@ export interface SkillDef {
   name: string
   kind: SkillKind
   desc: string
+  partnerOnly?: boolean // 相方候補だけが持つ。主人公には付かないので、アルバムには並べない
 }
 
 export const SKILLS: SkillDef[] = [
@@ -26,7 +27,7 @@ export const SKILLS: SkillDef[] = [
   { id: 'kugaku', name: '苦学生', kind: 'buki', desc: 'バイトの稼ぎが増える' },
   { id: 'aikata', name: '相方思い', kind: 'buki', desc: '相方との関係が下がりにくい' },
   { id: 'zassou', name: '雑草魂', kind: 'buki', desc: '梅組にいる間、成長が早い' },
-  { id: 'agari', name: 'あがり症', kind: 'kuse', desc: '本番で実力が出にくい' },
+  { id: 'agari', name: 'あがり症', kind: 'kuse', desc: '本番で実力が出にくい', partnerOnly: true },
   { id: 'gakusei', name: '学生お笑い臭', kind: 'kuse', desc: '一般のお客さんにウケにくい' },
   { id: 'shiagari', name: '仕上がってる扱い', kind: 'kuse', desc: '講師のアドバイスが減る。結果を出すと解ける' },
   { id: 'chikoku', name: '遅刻魔', kind: 'kuse', desc: 'たまに授業に入れない' },
@@ -57,3 +58,6 @@ export const SKILLS: SkillDef[] = [
 ]
 
 export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(SKILLS.map((s) => [s.id, s]))
+
+// 卒業アルバムに並べる特殊能力（主人公が手に入れられるものだけ）
+export const ALBUM_SKILLS: SkillDef[] = SKILLS.filter((d) => !d.partnerOnly)

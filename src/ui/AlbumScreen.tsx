@@ -1,5 +1,5 @@
 import { KIND_ORDER, KIWAMI_HINT, RIVAL_ENDINGS, ROUTES, type Album } from '../game/album'
-import { SKILLS } from '../game/data/skills'
+import { ALBUM_SKILLS } from '../game/data/skills'
 import { CAREERS, CAREER_SCENES, openCareers } from '../game/careers'
 import { SkillBadge } from './parts'
 
@@ -7,7 +7,7 @@ import { SkillBadge } from './parts'
 export function AlbumScreen({ album, onBack }: { album: Album; onBack: () => void }) {
   const picks = album.careerPicks ?? []
   const pickCount = CAREER_SCENES.reduce((a, c) => a + c.choices, 0)
-  const total = SKILLS.length + ROUTES.length + RIVAL_ENDINGS.length + CAREERS.length + pickCount
+  const total = ALBUM_SKILLS.length + ROUTES.length + RIVAL_ENDINGS.length + CAREERS.length + pickCount
   const have = album.skills.length + album.routes.length + album.rivals.length + album.careers.length + picks.length
   const seenOf = (key: string) => picks.filter((p) => p.startsWith(`${key}:`)).length
   return (
@@ -103,7 +103,7 @@ export function AlbumScreen({ album, onBack }: { album: Album; onBack: () => voi
       <section className="card">
         <h2>特殊能力</h2>
         {KIND_ORDER.map(({ kind, label }) => {
-          const list = SKILLS.filter((d) => d.kind === kind)
+          const list = ALBUM_SKILLS.filter((d) => d.kind === kind)
           const got = list.filter((d) => album.skills.includes(d.id))
           return (
             <div key={kind} className="album-group">

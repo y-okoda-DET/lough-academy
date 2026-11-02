@@ -9,7 +9,7 @@ import type { GameState } from './types'
 interface Scene {
   title: string
   place: string
-  lines: (me: string) => string[]
+  lines: (me: string, s: GameState) => string[]
   choices: { label: string; reply?: string; hint?: string; apply: (s: GameState) => void }[]
 }
 
@@ -32,7 +32,7 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
         title: '60人と目を合わせる',
         place: 'kouen',
         lines: (me) => [
-          'ナレーション：初めてのほやほやの前の晩。公園でネタ合わせ。',
+          'ナレーション：初めてのほやほやまで、あと3週間。公園でネタ合わせ。',
           '向井（笑い）「なあ、ツカミ変えへん？ お客さん全員と目合わせてから始めたいねん」',
           `${me}（驚き）「何人おると思ってんねん」`,
           '向井（ふつう）「60人。1人2秒で、ちょうど2分や」',
@@ -48,8 +48,10 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '親父の店',
         place: 'ekimae',
-        lines: (me) => [
-          'ナレーション：合宿帰りのバス。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。',
+        lines: (me, s) => [
+          s.flags.gasshuku_went
+            ? 'ナレーション：合宿帰りのバス。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。'
+            : 'ナレーション：ネタ合わせの帰り道。向井がスマホの写真を見せてきた。古い定食屋の前で、向井にそっくりのおっちゃんがピースしている。',
           '向井（照れ）「親父の店。売れたら、ここでロケしてもらうねん」',
           '向井（笑い）「“息子さんの面白エピソードは？”って聞かれたら、親父、絶対スベるけどな」',
           `${me}（笑い）「親父さんの顔の方がもうおもろいやん」`,
@@ -102,10 +104,10 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '笑い7回',
         place: 'heya',
-        lines: (me) => [
-          'ナレーション：合宿から帰った夜。堂島からLINEが来た。',
-          '堂島（ふつう）「合宿のネタ、数えたら笑い7回やった」',
-          '堂島（照れ）「去年の俺、0回やってん。……7倍や」',
+        lines: (me, s) => [
+          s.flags.gasshuku_went ? 'ナレーション：合宿から帰った夜。堂島からLINEが来た。' : 'ナレーション：9月のネタ見せの夜。堂島からLINEが来た。',
+          s.flags.gasshuku_went ? '堂島（ふつう）「合宿のネタ、数えたら笑い7回やった」' : '堂島（ふつう）「今日のネタ、数えたら笑い7回やった」',
+          '堂島（照れ）「4月の俺、0回やってん。……7倍や」',
           `${me}（笑い）「0の7倍は0やぞ」`,
           '堂島（爆笑）「それ、ネタ帳に書いとく」',
         ],
@@ -157,14 +159,14 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
         title: '劇団の後輩',
         place: 'livehouse',
         lines: (me) => [
-          'ナレーション：ほやほやの受付。岸辺が客席の後ろをちらちら見ている。',
+          'ナレーション：来週のほやほやの、チケットの手売り。岸辺が劇場の入口の方をちらちら見ている。',
           '岸辺（照れ）「劇団の後輩が、チケット買ってくれたの」',
           '岸辺（落ち込み）「スベったら、もう二度と劇団に顔を出せない」',
           `${me}（笑い）「ほな、ウケたら劇団に顔出し放題やな」`,
           '岸辺（笑い）「……それは、それで困る」',
         ],
         choices: [
-          { reply: '岸辺（照れ）「……うん。後輩のために」', label: '「今日は後輩のためにやろ」', hint: '関係値＋', apply: (s) => bond(s, 8) },
+          { reply: '岸辺（照れ）「……うん。後輩のために」', label: '「来週は後輩のためにやろ」', hint: '関係値＋', apply: (s) => bond(s, 8) },
           { reply: '岸辺（怒り）「だめ。……1回だけなら、いい」', label: '「後輩、いじってええ？」', hint: '対応力＋・ファン＋', apply: (s) => (gain(s, 'adlib', 2), (s.fans += 2)) },
         ],
       },
@@ -193,14 +195,16 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
       {
         title: '0.3秒',
         place: 'heya',
-        lines: (me) => [
+        lines: (me, s) => [
           'ナレーション：早瀬の部屋。こちらの部屋と、間取りが左右反対なだけで同じだ。',
-          '早瀬（怒り）「ちょっと待ってお前今のツッコミ0.3秒遅いねんそれやったら客の笑いが先に来てまうからお前のツッコミが笑いを消すことになるやんか」',
+          s.player.role === 'boke'
+            ? '早瀬（怒り）「ちょっと待ってお前今のボケ0.3秒早いねんそれやったら俺のツッコミ入る隙間ないし客が笑う前に次のボケが来てまうやんか」'
+            : '早瀬（怒り）「ちょっと待ってお前今のツッコミ0.3秒遅いねんそれやったら客の笑いが先に来てまうからお前のツッコミが笑いを消すことになるやんか」',
           `${me}（ふつう）「……今の注意の方が、ネタより長いな」`,
           '早瀬（爆笑）「それや今のそれ入れよ」',
         ],
         choices: [
-          { reply: '早瀬（笑い）「それや今のでええ客の笑いと重なった」', label: 'ツッコミを0.3秒早める', hint: 'ネタの完成度＋', apply: (s) => ((s.neta.polish = clamp(s.neta.polish + 8)), bond(s, 4)) },
+          { reply: '早瀬（笑い）「それや今のでええ客の笑いと重なった」', label: '言われたとおり、間を0.3秒ずらす', hint: 'ネタの完成度＋', apply: (s) => ((s.neta.polish = clamp(s.neta.polish + 8)), bond(s, 4)) },
           { reply: '早瀬（爆笑）「無理やこれ以上早よしたら日本語ちゃうなる」', label: '「お前の注意を0.3秒早めろ」', hint: 'ワード力＋・関係値＋', apply: (s) => (gain(s, 'word', 2), bond(s, 6)) },
           { reply: '早瀬（爆笑）「ほらできるやん最初からそれやれや」', label: '同じ速さで言い返す', hint: 'ワード力＋＋・体調−', apply: (s) => (gain(s, 'word', 4), (s.condition = clamp(s.condition - 6))) },
         ],
@@ -266,13 +270,16 @@ export const PARTNER_SCRIPTS: Record<string, PartnerScript> = {
         ],
         choices: [
           { reply: 'ナレーション：佐倉はスマホを伏せて、いつもより大きな声でネタ合わせを始めた。', label: '見なかったことにする', hint: '関係値＋', apply: (s) => bond(s, 4) },
-          { reply: '佐倉（驚き）「……見てたんか。……ほな、空にする。今ここで」', label: '「ゴミ箱も空にしとけよ」', hint: '関係値＋・尖り＋', apply: (s) => (bond(s, 6), (s.edge += 1)) },
+          { reply: '佐倉（驚き）「……見てたんか。……ほな、空にする。今ここで」', label: '「ゴミ箱も空にしとけよ」', hint: '関係値＋', apply: (s) => (bond(s, 6)) },
         ],
       },
       {
         title: '承諾の期限',
         place: 'famires',
-        lines: () => ['佐倉（ふつう）「内定の、最終の返事の期限、今月末やねん」', '佐倉（考え中）「4年やってきて、今がいちばん迷ってる」'],
+        lines: (_me, s) =>
+          s.flags.naitei_declined
+            ? ['佐倉（ふつう）「断った会社の人事から、また電話あってん。“4月までなら、まだ席は空けておけます”って」', '佐倉（考え中）「断ったのに。4年やってきて、今がいちばん迷ってる」']
+            : ['佐倉（ふつう）「内定の、最終の返事の期限、今月末やねん」', '佐倉（考え中）「4年やってきて、今がいちばん迷ってる」'],
         choices: [
           { reply: '佐倉（笑い）「……その計算、辻堂さんと一緒やな」', label: '「4年やったら、あと1年もいけるやろ」', hint: '関係値＋', apply: (s) => bond(s, 6) },
           { reply: 'ナレーション：戻ってくると、佐倉はメロンソーダとコーラを混ぜていた。少しだけ笑っていた。', label: '何も言わずに、ドリンクバーを取りに行く', hint: '体調＋', apply: (s) => (s.condition = clamp(s.condition + 4)) },
@@ -296,7 +303,7 @@ export const PARTNER_STORIES: Record<string, StoryDef> = {
     view: (s, p) => {
       const sc = scriptOf(s)?.scenes[Number(p.n)]
       if (!sc) return { title: '相方', lines: ['ナレーション：相方と、いつものファミレスでネタを合わせた。'], choices: [] }
-      return { title: sc.title, place: sc.place, lines: [...sc.lines(s.player.callName), ...(Number(p.n) === 2 ? recall(s) : [])], choices: sc.choices.map((c) => ({ label: c.label, hint: c.hint, reply: c.reply })) }
+      return { title: sc.title, place: sc.place, lines: [...sc.lines(s.player.callName, s), ...(Number(p.n) === 2 ? recall(s) : [])], choices: sc.choices.map((c) => ({ label: c.label, hint: c.hint, reply: c.reply })) }
     },
     resolve: (s, c, _r, p) => scriptOf(s)?.scenes[Number(p.n)]?.choices[c]?.apply(s),
   },

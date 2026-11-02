@@ -71,6 +71,7 @@ const VENUE: Record<StageKind, string> = {
   contest_conte: 'livehouse',
   contest_manzai: 'livehouse',
   gasshuku: 'koudou',
+  sankou: 'livehouse',
   tozai: 'butai',
   grad_prelim: 'butai',
   grad_final: 'butai',

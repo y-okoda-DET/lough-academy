@@ -94,7 +94,7 @@ export function WeekScreen({ state, onRun, onNeta, intro = false, gains = {} }: 
       hint: '仲＋・食費が浮く・体調−',
       tag: '',
     })),
-    { k: 'douki', label: '同期と飲む', hint: '−3,000円／結束・やる気＋', tag: '' },
+    { k: 'douki', label: '同期と飲む', hint: '−3,000円／やる気＋', tag: '' },
     { k: 'netacho', label: 'ネタ帳を書く', hint: '完成度・ワード力＋', tag: '' },
     { k: 'egosa', label: 'エゴサする', hint: 'やる気が上下する', tag: '' },
     { k: 'jikka', label: '実家に電話', hint: 'やる気＋', tag: '' },

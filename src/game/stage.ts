@@ -62,6 +62,15 @@ export const STAGES: Record<StageKind, StageSpec> = {
     big: false,
     intro: ['昨日、30秒で止められたネタ。', '一晩で直したものを、同じ講師の前でもう一度やる。同期全員が見ている。'],
   },
+  sankou: {
+    kind: 'sankou',
+    title: '三校対抗戦',
+    venue: 'ライブハウス（三校合同）',
+    audience: 'general',
+    difficulty: 60,
+    big: false,
+    intro: ['ネクスト笑劇スクール、東都演芸塾との対抗戦。各校から選ばれた数組だけが出る。', '客席の3分の1は、他校の生徒だ。'],
+  },
   tozai: {
     kind: 'tozai',
     title: '東西寄席合戦',
@@ -89,6 +98,15 @@ export const STAGES: Record<StageKind, StageSpec> = {
     big: true,
     intro: ['残ったのは8組。優勝すれば卒業総代。', '総代になると、卒業後1か月は仕事でスケジュールが埋まるという。'],
   },
+}
+
+// 東西寄席合戦は12月がアウェイ（大阪）、1月がホーム（東京）。2回目の舞台はホーム用の会場と前口上にする
+export function stageSpec(state: GameState, kind: StageKind): StageSpec {
+  const spec = STAGES[kind]
+  if (kind !== 'tozai') return spec
+  const away = state.stageHistory.find((r) => r.kind === 'tozai')
+  if (!away) return spec
+  return { ...spec, title: '東西寄席合戦（ホーム戦）', venue: '東京の劇場（ホーム）', intro: ['東西の養成所の対抗戦。今度は、こっちの劇場に大阪の組がやってくる。', 'ホームの客席には、同期の顔が見える。'] }
 }
 
 const STYLE_STATS: Record<'manzai' | 'conte', StatKey[]> = {
@@ -191,7 +209,18 @@ export function scoreStage(state: GameState, spec: StageSpec, rng: Rng, lines: s
     if (q === 'early2') b.mods += 3
     if (q === 'early1') b.mods += 1
     if (q === 'late') b.mods -= 2
-    if (q === 'last') b.mods -= 5
+    // 最後尾は、見てもらえたときにだけ「辻堂が疲れて笑う」ことがある（灰原いわく、たまに効く）
+    if (q === 'last') {
+      if (rng.chance(0.25)) {
+        b.mods += 10
+        lines.push('最後の組。辻堂は疲れていたのか、ツカミで少しだけ笑った。')
+      } else b.mods -= 5
+    }
+  }
+  // 合宿の最終発表。頭から書き直した組は新ネタとして見てもらえる。昨日と同じネタは「同じもん」と見られる
+  if (spec.kind === 'gasshuku') {
+    if (state.flags.gasshuku_0) b.mods += 10
+    if (state.flags.gasshuku_1) b.mods -= 4
   }
 
   const score = Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods)
@@ -217,9 +246,12 @@ type Grade = 'great' | 'good' | 'miss'
 // 見せ場が2つある大舞台は、合計が大きくなりすぎないよう1つあたりを少し割り引く
 const GRADE_BONUS: Record<Grade, number> = { great: 24, good: 6, miss: -22 }
 const BIG_STAGE_RATE = 0.75
+// 賞レースの審査員は1日に何百組も見る。見せ場の一発より、ネタと地力で決まる（大半は1回戦で落ちる【research/03】）
+const CONTEST_RATE = 0.5
+const isContest = (kind?: StageKind) => kind === 'contest_conte' || kind === 'contest_manzai'
 
-export function showcaseBonus(showcase: Grade[]): number {
-  const rate = showcase.length >= 2 ? BIG_STAGE_RATE : 1
+export function showcaseBonus(showcase: Grade[], kind?: StageKind): number {
+  const rate = (showcase.length >= 2 ? BIG_STAGE_RATE : 1) * (isContest(kind) ? CONTEST_RATE : 1)
   return Math.round(showcase.reduce((sum, g) => sum + GRADE_BONUS[g], 0) * rate)
 }
 
@@ -276,12 +308,12 @@ function summarize(state: GameState, spec: StageSpec, t: Tally, rank: number | n
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0')
 
 // 点数がどう決まったかを、見せ場・ネタと能力・体調・本番のブレに分けて書く
-function explain(state: GameState, b: Breakdown, showcase: Grade[], accident: boolean, line: number): { label: string; text: string }[] {
+function explain(state: GameState, kind: StageKind, b: Breakdown, showcase: Grade[], accident: boolean, line: number): { label: string; text: string }[] {
   const rows: { label: string; text: string }[] = []
   if (showcase.length) {
     const n = (g: Grade) => showcase.filter((x) => x === g).length
     const parts = [n('great') && `ドッと${n('great')}`, n('good') && `まずまず${n('good')}`, n('miss') && `スベり${n('miss')}`].filter(Boolean)
-    rows.push({ label: '見せ場の出来', text: `${parts.join('・')}（${signed(showcaseBonus(showcase))}点）` })
+    rows.push({ label: '見せ場の出来', text: `${parts.join('・')}（${signed(showcaseBonus(showcase, kind))}点）` })
   }
   const base = [`ネタ${Math.round(b.cards)}`, `能力${Math.round(b.stats)}`, `仕上がり${Math.round(b.polish)}`]
   if (state.partner) base.push(`相方${Math.round(b.partner)}`)
@@ -291,12 +323,12 @@ function explain(state: GameState, b: Breakdown, showcase: Grade[], accident: bo
   rows.push({ label: '体調', text: accident ? `${cond}。本番で事故が起き、笑いが1段下がった` : cond })
   const etc = Math.round(b.luck + b.mods)
   rows.push({ label: '本番のブレ・相性', text: `${signed(etc)}点（度胸・特殊能力・客層との相性・出番の順番）` })
-  rows.push({ label: '合計', text: `${Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods) + showcaseBonus(showcase)}点（スベらない${line}・ウケる${line + 12}・爆笑${line + 26}点）` })
+  rows.push({ label: '合計', text: `${Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods) + showcaseBonus(showcase, kind)}点（スベらない${line}・ウケる${line + 12}・爆笑${line + 26}点）` })
   return rows
 }
 
 export function performStage(state: GameState, kind: StageKind, rng: Rng, showcase: Grade[] = []): StageResult {
-  const spec = STAGES[kind]
+  const spec = stageSpec(state, kind)
   const lines: string[] = []
 
   if (kind === 'netamise' && state.queueChoice === 'last' && rng.chance(0.35)) {
@@ -306,13 +338,14 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
       score: 0,
       level: 0,
       comment: '授業時間が終わり、見てもらえなかった。',
+      unseen: true,
       lines: ['最後尾に並んだら、順番が回ってこなかった。'],
     }
   }
 
   const scored = scoreStage(state, spec, rng, lines)
   const b = scored.b
-  const score = scored.score + showcaseBonus(showcase)
+  const score = scored.score + showcaseBonus(showcase, kind)
   // 毎月ある授業と寄席は、1年のうちに客の目も肥えていく（年度末で+20）
   const ramp = kind === 'netamise' || kind === 'live' ? Math.round(state.turn / 2) : 0
   const margin = score - spec.difficulty - ramp
@@ -361,6 +394,7 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
     showcase,
     tally,
     summary: summarize(state, spec, tally, rank, field),
-    why: explain(state, b, showcase, !!accident, spec.difficulty + ramp),
+    ...(rank ? { rank } : {}),
+    why: explain(state, kind, b, showcase, !!accident, spec.difficulty + ramp),
   }
 }
