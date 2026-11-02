@@ -64,7 +64,7 @@ export interface PlayerProfile {
   outfit: string
 }
 
-export type StageKind = 'netamise' | 'live' | 'contest_conte' | 'contest_manzai' | 'gasshuku' | 'tozai' | 'grad_prelim' | 'grad_final'
+export type StageKind = 'netamise' | 'live' | 'contest_conte' | 'contest_manzai' | 'gasshuku' | 'sankou' | 'tozai' | 'grad_prelim' | 'grad_final'
 
 export interface StageResult {
   kind: StageKind
@@ -75,6 +75,7 @@ export interface StageResult {
   lines: string[]
   passed?: boolean
   rank?: number
+  unseen?: boolean // ネタ見せで順番が回ってこなかった（スベった扱いにしない）
   // 見せ場と結果文（古いセーブにはない）
   showcase?: ('great' | 'good' | 'miss')[]
   tally?: Tally

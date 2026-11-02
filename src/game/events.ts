@@ -1,4 +1,4 @@
-import { DEV_STORIES, affinity, classmatesOf, tie } from './bonds'
+import { DEV_STORIES, GIFT_LIKE, GIFT_RESPECT, affinity, classmatesOf, tie } from './bonds'
 import { kodawariOf } from './kodawari'
 import { PARTNER_STORIES } from './partnerLines'
 import { YEAR_STORIES } from './yearEvents'
@@ -37,6 +37,13 @@ export interface StoryDef {
 
 function seniorName(s: GameState, id: string | number | undefined): string {
   return s.seniors.find((x) => x.id === id)?.name ?? '先輩'
+}
+
+// お金が尽きたときに頼れる先輩。居候させてくれるのは、仲が良くて、芸も認めてくれている先輩だけ
+function debtHelpers(s: GameState) {
+  const savior = s.seniors.find((x) => x.like >= GIFT_LIKE - 5 && x.respect >= GIFT_RESPECT)
+  const friend = savior ? undefined : s.seniors.find((x) => x.like >= 50)
+  return { savior, friend }
 }
 
 export const STORIES: Record<string, StoryDef> = {
@@ -130,12 +137,12 @@ export const STORIES: Record<string, StoryDef> = {
       lines: s.flags.queue_seen
         ? ['ナレーション：今月もネタ見せの日。列はもう廊下に伸びている。']
         : [
-            'ナレーション：ネタ見せは並んだ順。授業時間内に見てもらえるのは15組前後。',
-            '灰原（ふつう）「後ろの方ほど、辻堂さんの機嫌が悪なるで。15組目くらいから“おもんない”の“お”しか言わへん」',
+            'ナレーション：ネタ見せは並んだ順。授業時間内に見てもらえるのは12組前後。',
+            '灰原（ふつう）「後ろの方ほど、辻堂さんの機嫌が悪なるで。8組目くらいから“おもんない”の“お”しか言わへん」',
           ],
       choices: [
         { reply: '灰原（驚き）「早っ。私より先に来てるやん。鍵、まだ開いてへんで」', label: '2時間前から最前列に並ぶ', hint: '体調−・講師の機嫌＋' },
-        { reply: '灰原（ふつう）「1時間前は、だいたい20番目くらいやな」', label: '1時間前に並ぶ', hint: '体調−' },
+        { reply: '灰原（ふつう）「1時間前は、だいたい6番目くらいやな」', label: '1時間前に並ぶ', hint: '体調−' },
         { reply: '灰原（ふつう）「ギリギリの人は、辻堂さんの“お”を聞くことになるで」', label: 'ギリギリに行く' },
         { reply: '灰原（考え中）「わざと後ろ？ ……辻堂さんが疲れて笑うの狙いか。たまに効くねん、それ」', label: 'わざと列の後ろに並ぶ', hint: '見てもらえないかも' },
       ],
@@ -286,7 +293,7 @@ export const STORIES: Record<string, StoryDef> = {
     view: (s) => ({
       title: 'クラス替え',
       lines: [
-        'ナレーション：夏が終わり、ネタ見せが実力別のクラスになった。松組10組、竹組15組、梅組はそれ以外の100組以上。',
+        `ナレーション：夏が終わり、ネタ見せが実力別のクラスになった。松組10組、竹組15組、梅組はそれ以外の${Math.max(10, Math.round(s.classmates / 2) - 25)}組。`,
         `ナレーション：${s.comboName}は「${{ none: '-', ume: '梅組', take: '竹組', matsu: '松組' }[s.classRank]}」。`,
         s.classRank === 'ume' ? '三宅（笑い）「梅組へようこそ！ 梅はな、いちばん寒い時期に咲くんやで」' : '辻堂（ふつう）「名前、覚えたぞ。覚えたからには、忘れさせんなよ」',
         'ナレーション：昇格・降格は毎月。コンビを解散すると、自動的に梅組に落ちる。',
@@ -592,37 +599,47 @@ export const STORIES: Record<string, StoryDef> = {
   },
   debt: {
     view: (s) => {
-      const savior = s.seniors.find((x) => x.like >= 50)
+      const { savior, friend } = debtHelpers(s)
       // バイト先の店長がお金を貸してくれる【research/02 店長が病院代を貸してくれた】
       const tencho = !savior && affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan
+      // 仲は良いが、まだ認めてもらえていない先輩は、飯だけ奢ってくれる（仲と認めの2軸【設定書 4章】）
+      const meal = friend
+        ? [friend.name === 'ナカジ' ? 'ナカジ（ふつう）「お金は貸せないけど、ご飯は奢るよ。……住まわせるほどは、まだ君のネタ知らないし」' : `${friend.name}（ふつう）「金は貸せんけど、飯は奢ったる。……住まわせるほどは、まだお前のネタ知らんしな」`]
+        : []
       return {
         title: 'お金が尽きた',
         lines: savior
           ? ['ナレーション：家賃が払えない。', savior.name === 'ナカジ' ? 'ナカジ（ふつう）「しばらく、うちに住めば？」' : `${savior.name}（ふつう）「しばらく、うちに住めや」`]
           : tencho
-            ? ['ナレーション：家賃が払えない。バイトの休憩中、通帳を見てため息をついたのを、店長に見られた。', '店長（ふつう）「なんぼ足りへんねん。……ええから、売れたら返せ」']
-            : ['ナレーション：家賃が払えない。実家に電話した。', 'ナレーション：母は何も聞かずに5万円を振り込んでくれた。振込名義が「ガンバレ」になっていた。'],
+            ? ['ナレーション：家賃が払えない。', ...meal, 'ナレーション：バイトの休憩中、通帳を見てため息をついたのを、店長に見られた。', '店長（ふつう）「なんぼ足りへんねん。……ええから、売れたら返せ」']
+            : ['ナレーション：家賃が払えない。', ...meal, 'ナレーション：実家に電話した。母は何も聞かずに5万円を振り込んでくれた。振込名義が「ガンバレ」になっていた。'],
         choices: [],
       }
     },
     resolve: (s) => {
-      const savior = s.seniors.find((x) => x.like >= 50)
-      if (!savior && affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan) {
+      const { savior, friend } = debtHelpers(s)
+      if (savior) {
+        s.money += 30000
+        savior.like = clamp(savior.like + 5)
+        s.flags.isourou = true
+        return
+      }
+      if (friend) {
+        s.money += 5000
+        s.motivation = clamp(s.motivation + 5)
+        friend.like = clamp(friend.like + 3)
+      }
+      if (affinity(s, 'tencho') >= 40 && !s.flags.tencho_loan) {
         s.flags.tencho_loan = true
         s.money += 40000
         tie(s, 'tencho', 8)
         return
       }
-      if (savior) {
-        s.money += 30000
-        savior.like = clamp(savior.like + 5)
-        s.flags.isourou = true
-      } else {
-        s.money += 50000
-        s.motivation = clamp(s.motivation - 10)
-      }
+      s.money += 50000
+      s.motivation = clamp(s.motivation - 10)
     },
   },
+
 }
 
 Object.assign(STORIES, DEV_STORIES, YEAR_STORIES, PARTNER_STORIES, RIVAL_STORIES, SENPAI_STORIES, CAREER_STORIES)

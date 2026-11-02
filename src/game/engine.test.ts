@@ -213,3 +213,40 @@ describe('主人公の設定', () => {
     expect(m.player.hairColor).not.toBe(s.player.hairColor)
   })
 })
+
+describe('話と仕組みのずれ（点検で見つかった分）', () => {
+  const base = () => endEvents(drainEvents(createGame({ name: 'a', callName: 'a', role: 'boke', style: 'manzai', seed: 5 })))
+
+  it('ネタ見せで順番が回ってこなかった回は、スベった扱いにしない', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const s0 = { ...base(), rng: seed, queueChoice: 'last' as const, phase: 'event' as const, pending: [{ type: 'stage' as const, kind: 'netamise' as const }] }
+      const s = doStage(s0)
+      if (!s.lastStage?.unseen) continue
+      expect(s.counters.suberi ?? 0).toBe(s0.counters.suberi ?? 0)
+      expect(s.motivation).toBe(s0.motivation)
+      return
+    }
+    throw new Error('見てもらえない回が一度も出なかった')
+  })
+
+  it('居候させてくれるのは、仲と認めの両方が足りる先輩だけ', () => {
+    const run = (respect: number) => {
+      const s = base()
+      s.seniors = s.seniors.map((x) => (x.id === 'haibara' ? { ...x, like: 60, respect } : { ...x, like: 0, respect: 0 }))
+      s.pending = [{ type: 'story', key: 'debt' }]
+      s.phase = 'event'
+      return resolveStory(s, 0)
+    }
+    expect(run(10).flags.isourou).toBeFalsy()
+    expect(run(40).flags.isourou).toBe(true)
+  })
+
+  it('三校対抗戦に選ばれたら、舞台がある', () => {
+    const s = base()
+    s.flags.tokushin = true
+    s.pending = [{ type: 'story', key: 'sankou' }]
+    s.phase = 'event'
+    const t = resolveStory(s, 0)
+    expect(t.pending.some((e) => e.type === 'stage' && e.kind === 'sankou')).toBe(true)
+  })
+})

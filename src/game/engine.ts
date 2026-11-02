@@ -268,7 +268,8 @@ function applyNight(s: GameState, a: NightAction, rng: Rng): void {
       senior.like = clamp(senior.like + (has(s, 'kawaigarare') ? 11 : 7) + (has(s, 'hitorashi') ? 3 : 0))
       s.condition = clamp(s.condition - 10)
       s.money += 2500 // ごちそうになった分、食費が浮く
-      count(s, 'nomi')
+      // 先輩の飲みに12回ついて行くと、もう誘いを断れなくなる
+      if (count(s, 'nomi') >= 12) addSkill(s, 'kotowarenai', '◆先輩の飲みについて行くのも、これで12回目。誘われると、もう断れない。クセ「断れない」がついた。')
       log.push(flavor('nomi', rng, { senior: senior.name }))
       // 飲みを重ねると、その先輩の話が進む（最後の話で特殊能力を受け継げることがある）
       seniorDrama(s, senior.id)
@@ -470,7 +471,7 @@ export function doStage(prev: GameState, showcase: ('great' | 'good' | 'miss')[]
   s.weekLog = []
   withRng(s, (rng) => {
     const r = performStage(s, ev.kind, rng, showcase)
-    withGainScale(TUNING.stage, () => applyStageEffects(s, r, rng))
+    if (!r.unseen) withGainScale(TUNING.stage, () => applyStageEffects(s, r, rng))
     s.lastStage = r
     s.stageHistory.push(r)
   })
@@ -567,13 +568,19 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
     }
     case 'gasshuku':
       // 前の晩に止められたネタで、どこまで取り返せたか
+      if (s.flags.gasshuku_0) {
+        r.lines.push(r.level >= 1 ? '辻堂「……頭から変えてきたな」' : '辻堂「頭から変えてきたんはええ。中身が追いついてへん」')
+        s.teacherEval = clamp(s.teacherEval + 3)
+        tie(s, 'tsujido', 3)
+      }
+      else if (s.flags.gasshuku_1) r.lines.push('辻堂「……同じもんやな。仕上がりだけは上がっとる」')
       if (r.level >= 2) {
         r.verdict = { head: '強化合宿', text: 'MVP！', good: true }
         r.lines.push('辻堂は、昨日と同じ席で腕を組んだまま、一回だけ頷いた。')
         r.lines.push('閉校式で、合宿MVPに名前を呼ばれた。「MVPは必ず売れる」というジンクスがあるらしい。')
         s.motivation = clamp(s.motivation + 15)
         s.staffEval = clamp(s.staffEval + 10)
-        s.teacherEval = clamp(s.teacherEval + 6)
+        s.teacherEval = clamp(s.teacherEval + (s.flags.gasshuku_1 ? 2 : 6))
         tie(s, 'tsujido', 6)
         count(s, 'mvp')
       } else if (r.level === 1) {
@@ -587,6 +594,11 @@ function applyStageEffects(s: GameState, r: GameState['lastStage'] & {}, rng: Rn
         tie(s, 'tsujido', 2)
         gain(s, 'guts', 2)
       }
+      break
+    case 'sankou':
+      s.staffEval = clamp(s.staffEval + 2 + r.level * 2)
+      s.fans += 2 + r.level * 2
+      r.lines.push(r.level >= 2 ? '終演後、他校の講師に「どこのクラス？」と聞かれた。' : r.level === 1 ? 'ワイシャツ同盟の方が、ひとつ多く笑いを取っていた。' : '他校の生徒が、終わるまでずっとパンフレットを読んでいた。')
       break
     case 'tozai':
       s.staffEval = clamp(s.staffEval + r.level * 4)

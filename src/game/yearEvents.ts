@@ -370,12 +370,9 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
     },
     resolve: (s, c) => {
       const chosen = s.classRank === 'matsu' || !!s.flags.tokushin
-      if (chosen) {
-        s.staffEval = clamp(s.staffEval + 5)
-        s.fans += 4
-      }
       if (c === 0) gain(s, 'idea', 3)
       else s.neta.polish = clamp(s.neta.polish + 8)
+      if (chosen) push(s, { type: 'stage', kind: 'sankou' })
     },
   },
 
@@ -453,7 +450,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ...recall(s),
           ],
           choices: [
-            { reply: '店長（ふつう）「おう。急がんでええ。席は空けとくわ」', label: '「考えさせてください」', hint: 'お金＋' },
+            { reply: '店長（ふつう）「おう。急がんでええ。席は空けとくわ」', label: '「考えさせてください」', hint: '体調＋・やる気−' },
             { reply: '店長（爆笑）「言うたな！ ほな売れるまで、まかないはおかわり1回までや」', label: '「まかない食べ放題は、売れてからにします」', hint: 'やる気＋' },
           ],
         },
@@ -468,7 +465,7 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
             ...recall(s),
           ],
           choices: [
-            { reply: 'ナレーション：「ほな、連絡して」。同期は改札の向こうで手を振った。', label: '「……ちょっと考える」', hint: 'お金＋' },
+            { reply: 'ナレーション：「ほな、連絡して」。同期は改札の向こうで手を振った。', label: '「……ちょっと考える」', hint: '体調＋・やる気−' },
             { reply: 'ナレーション：同期は笑った。「なんやそれ。……ほな、売れたら自慢させてな」', label: '「なんとなく、まだ辞めへん」', hint: 'やる気＋' },
           ],
         },
@@ -489,7 +486,10 @@ export const YEAR_STORIES: Record<string, StoryDef> = {
           gain(s, 'expr', 3)
         }
       } else if (c === 0) {
-        s.money += 20000
+        // 返事を保留した。逃げ道ができて少し楽になったが、迷いは残る
+        s.condition = clamp(s.condition + 6)
+        s.motivation = clamp(s.motivation - 6)
+        s.weekLog.push('返事は保留にした。逃げ道があると思うと、少しだけ眠れるようになった。そのぶん、ネタ帳を開く手が重い。')
       } else {
         s.motivation = clamp(s.motivation + 10)
         if (k === 'kane') tie(s, 'tencho', 4)

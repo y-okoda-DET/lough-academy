@@ -62,6 +62,15 @@ export const STAGES: Record<StageKind, StageSpec> = {
     big: false,
     intro: ['昨日、30秒で止められたネタ。', '一晩で直したものを、同じ講師の前でもう一度やる。同期全員が見ている。'],
   },
+  sankou: {
+    kind: 'sankou',
+    title: '三校対抗戦',
+    venue: 'ライブハウス（三校合同）',
+    audience: 'general',
+    difficulty: 60,
+    big: false,
+    intro: ['ネクスト笑劇スクール、東都演芸塾との対抗戦。各校から選ばれた数組だけが出る。', '客席の3分の1は、他校の生徒だ。'],
+  },
   tozai: {
     kind: 'tozai',
     title: '東西寄席合戦',
@@ -200,7 +209,18 @@ export function scoreStage(state: GameState, spec: StageSpec, rng: Rng, lines: s
     if (q === 'early2') b.mods += 3
     if (q === 'early1') b.mods += 1
     if (q === 'late') b.mods -= 2
-    if (q === 'last') b.mods -= 5
+    // 最後尾は、見てもらえたときにだけ「辻堂が疲れて笑う」ことがある（灰原いわく、たまに効く）
+    if (q === 'last') {
+      if (rng.chance(0.25)) {
+        b.mods += 10
+        lines.push('最後の組。辻堂は疲れていたのか、ツカミで少しだけ笑った。')
+      } else b.mods -= 5
+    }
+  }
+  // 合宿の最終発表。頭から書き直した組は新ネタとして見てもらえる。昨日と同じネタは「同じもん」と見られる
+  if (spec.kind === 'gasshuku') {
+    if (state.flags.gasshuku_0) b.mods += 10
+    if (state.flags.gasshuku_1) b.mods -= 4
   }
 
   const score = Math.round(b.cards + b.stats + b.polish + b.partner + b.luck + b.cond + b.mods)
@@ -318,6 +338,7 @@ export function performStage(state: GameState, kind: StageKind, rng: Rng, showca
       score: 0,
       level: 0,
       comment: '授業時間が終わり、見てもらえなかった。',
+      unseen: true,
       lines: ['最後尾に並んだら、順番が回ってこなかった。'],
     }
   }
